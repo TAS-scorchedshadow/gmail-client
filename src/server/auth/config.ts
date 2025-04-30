@@ -1,4 +1,5 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import { access } from "fs";
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
@@ -17,6 +18,8 @@ declare module "next-auth" {
       // ...other properties
       // role: UserRole;
     } & DefaultSession["user"];
+    accessToken: string | null;
+    refreshToken: string | null;
     error: string;
   }
 
@@ -36,6 +39,14 @@ export const authConfig = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorization: {
+        params: {
+          scope:
+            "openid email profile https://www.googleapis.com/auth/gmail.metadata https://www.googleapis.com/auth/gmail.modify",
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
     }),
   ],
   adapter: PrismaAdapter(db),
@@ -48,11 +59,13 @@ export const authConfig = {
         session.error = "Google account not found";
         return session;
       }
+
       if (
         !googleAccount.expires_at ||
         googleAccount.expires_at * 1000 < Date.now()
       ) {
         // If the access token has expired, try to refresh it
+        console.log(googleAccount);
         try {
           // https://accounts.google.com/.well-known/openid-configuration
           // We need the `token_endpoint`.
@@ -76,7 +89,7 @@ export const authConfig = {
             refresh_token?: string;
           };
 
-          await db.account.update({
+          const resp = await db.account.update({
             data: {
               access_token: newTokens.access_token,
               expires_at: Math.floor(Date.now() / 1000 + newTokens.expires_in),
@@ -90,12 +103,18 @@ export const authConfig = {
               },
             },
           });
+          session.accessToken = resp.access_token;
+          session.refreshToken = resp.refresh_token;
         } catch (error) {
           console.error("Error refreshing access_token", error);
           // If we fail to refresh the token, return an error so we can handle it on the page
           session.error = "RefreshTokenError";
         }
+      } else {
+        session.accessToken = googleAccount.access_token;
+        session.refreshToken = googleAccount.refresh_token;
       }
+
       return session;
     },
   },
