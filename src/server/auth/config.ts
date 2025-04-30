@@ -42,7 +42,7 @@ export const authConfig = {
       authorization: {
         params: {
           scope:
-            "openid email profile https://www.googleapis.com/auth/gmail.metadata https://www.googleapis.com/auth/gmail.modify",
+            "openid email profile https://www.googleapis.com/auth/gmail.modify",
           access_type: "offline",
           prompt: "consent",
         },
