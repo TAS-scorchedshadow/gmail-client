@@ -48,8 +48,8 @@ export function AccountSwitcher({
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {accounts.map((account) => (
-          <SelectItem key={account.email} value={account.email}>
+        {accounts.map((account, i) => (
+          <SelectItem key={account.email + i} value={account.email}>
             <div className="[&_svg]:text-foreground flex items-center gap-3 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0">
               {account.icon}
               {account.email}

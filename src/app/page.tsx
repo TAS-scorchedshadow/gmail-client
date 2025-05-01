@@ -15,9 +15,9 @@ export default async function Home() {
 
   return (
     <HydrateClient>
-      <main className="flex min-h-screen flex-col items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <div className="flex flex-col items-center justify-center gap-4">
+      <main className="flex min-h-screen w-full flex-col items-center justify-center">
+        <div className="flex w-full flex-col items-center gap-2">
+          <div className="flex w-full flex-col items-center justify-center gap-4">
             <p className="text-center text-2xl">
               {session && <span>Logged in as {session.user?.name}</span>}
             </p>

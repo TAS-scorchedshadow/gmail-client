@@ -1,9 +1,18 @@
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns/formatDistanceToNow";
-import { useState, type ComponentProps } from "react";
+import {
+  useState,
+  type ComponentProps,
+  useRef,
+  useCallback,
+  useEffect,
+} from "react";
 import { cn } from "~/lib/utils";
 import { mails, type Mail } from "./data";
+import { api } from "~/trpc/react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import ThreadPreview from "./mail /ThreadPreview";
 
 interface MailListProps {
   items: Mail[];
@@ -12,75 +21,117 @@ interface MailListProps {
 export function MailList({ items }: MailListProps) {
   const [mail, setMail] = useState(mails);
 
-  return (
-    <ScrollArea className="h-screen">
-      <div className="flex flex-col gap-2 p-4 pt-0">
-        {items.map((item) => (
-          <button
-            key={item.id}
-            className={cn(
-              "hover:bg-accent flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all",
-              mail.selected === item.id && "bg-muted",
-            )}
-            onClick={() =>
-              setMail({
-                ...mail,
-                selected: item.id,
-              })
-            }
-          >
-            <div className="flex w-full flex-col gap-1">
-              <div className="flex items-center">
-                <div className="flex items-center gap-2">
-                  <div className="font-semibold">{item.name}</div>
-                  {!item.read && (
-                    <span className="flex h-2 w-2 rounded-full bg-blue-600" />
-                  )}
-                </div>
-                <div
-                  className={cn(
-                    "ml-auto text-xs",
-                    mail.selected === item.id
-                      ? "text-foreground"
-                      : "text-muted-foreground",
-                  )}
-                >
-                  {formatDistanceToNow(new Date(item.date), {
-                    addSuffix: true,
-                  })}
-                </div>
-              </div>
-              <div className="text-xs font-medium">{item.subject}</div>
-            </div>
-            <div className="text-muted-foreground line-clamp-2 text-xs">
-              {item.text.substring(0, 300)}
-            </div>
-            {item.labels.length ? (
-              <div className="flex items-center gap-2">
-                {item.labels.map((label) => (
-                  <Badge key={label} variant={getBadgeVariantFromLabel(label)}>
-                    {label}
-                  </Badge>
-                ))}
-              </div>
-            ) : null}
-          </button>
-        ))}
-      </div>
-    </ScrollArea>
+  const {
+    status,
+    data,
+    error,
+    isFetching,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+  } = api.email.getThreadsPaginated.useInfiniteQuery(
+    {
+      maxResults: 25,
+    },
+    {
+      getNextPageParam: (lastPage) => lastPage.cursor,
+    },
   );
-}
 
-function getBadgeVariantFromLabel(
-  label: string,
-): ComponentProps<typeof Badge>["variant"] {
-  if (["work"].includes(label.toLowerCase())) {
-    return "default";
+  const allRows = data ? data.pages.flatMap((d) => d.data.threads) : [];
+
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: hasNextPage ? allRows.length + 1 : allRows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 120,
+    overscan: 5,
+  });
+
+  //called on scroll and possibly on mount to fetch more data as the user scrolls and reaches bottom of table
+  const fetchMoreOnBottomReached = useCallback(
+    (containerRefElement?: HTMLDivElement | null) => {
+      if (containerRefElement) {
+        const { scrollHeight, scrollTop, clientHeight } = containerRefElement;
+        //once the user has scrolled within 500px of the bottom of the table, fetch more data if we can
+        if (
+          scrollHeight - scrollTop - clientHeight < 500 &&
+          !isFetching &&
+          hasNextPage
+        ) {
+          console.log("Fetching More");
+          fetchNextPage();
+        }
+      }
+    },
+    [fetchNextPage, isFetching, hasNextPage],
+  );
+
+  //a check on mount and after a fetch to see if the table is already scrolled to the bottom and immediately needs to fetch more data
+  useEffect(() => {
+    fetchMoreOnBottomReached(parentRef.current);
+  }, [fetchMoreOnBottomReached]);
+
+  if (status === "pending") {
+    return <p>Loading...</p>;
   }
 
-  if (["personal"].includes(label.toLowerCase())) {
-    return "outline";
+  if (status == "error") {
+    return <p>Error: {error.message}</p>;
   }
 
-  return "secondary";
+  return (
+    <div className="h-full">
+      <div
+        ref={parentRef}
+        onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}
+        style={{
+          height: `500px`,
+          width: `100%`,
+          overflow: "auto",
+        }}
+      >
+        <div
+          style={{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+          }}
+          className="relative w-full flex-col"
+        >
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            const isLoaderRow = virtualRow.index > allRows.length - 1;
+            const thread = allRows[virtualRow.index]!;
+
+            return (
+              <div
+                key={virtualRow.index}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: `${virtualRow.size}px`,
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                {isLoaderRow ? (
+                  hasNextPage ? (
+                    "Loading more..."
+                  ) : (
+                    "Nothing more to load"
+                  )
+                ) : (
+                  <ThreadPreview thread={thread} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      )
+      <div>
+        {isFetching && !isFetchingNextPage ? "Background Updating..." : null}
+      </div>
+    </div>
+  );
 }

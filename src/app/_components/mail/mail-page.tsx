@@ -4,8 +4,9 @@ import { Mail } from "./mail";
 export default function MailPage() {
   const defaultLayout = "react-resizable-panels:layout:mail";
   const defaultCollapsed = "react-resizable-panels:collapsed";
+
   return (
-    <div>
+    <div className="w-full">
       <Mail
         accounts={accounts}
         mails={mails}

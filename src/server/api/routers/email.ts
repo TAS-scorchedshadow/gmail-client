@@ -4,6 +4,7 @@ import { accessSync } from "fs";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 import { gmail } from "googleapis/build/src/apis/gmail";
+import { z } from "zod";
 
 function getGmailClient(access_token: string | null) {
   if (!access_token) {
@@ -64,7 +65,44 @@ export const emailRouter = createTRPCRouter({
     console.log(res.data.messages);
     return res.data.messages;
   }),
-  getAllThreads: protectedProcedure.query(async ({ ctx }) => {
+
+  getThreadsPaginated: protectedProcedure
+    .input(
+      z.object({
+        maxResults: z.number(),
+        cursor: z.string().nullish(),
+        q: z.string().nullish(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const gmail = getGmailClient(ctx.session.accessToken);
+      const res = await gmail.users.threads.list({
+        userId: "me",
+        maxResults: input.maxResults,
+        pageToken: (input.cursor ??= undefined),
+        q: (input.q ??= undefined),
+      });
+      return { data: res.data, cursor: res.data.nextPageToken };
+    }),
+
+  getThread: protectedProcedure
+    .input(
+      z.object({
+        threadId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const gmail = getGmailClient(ctx.session.accessToken);
+      const res = gmail.users.threads.get({
+        userId: "me",
+        format: "metadata",
+        id: input.threadId,
+      });
+      return res;
+    }),
+
+  // Grabs all threads and their messages
+  getAllThreadsFull: protectedProcedure.query(async ({ ctx }) => {
     const gmail = getGmailClient(ctx.session.accessToken);
     const res = await gmail.users.threads.list({
       userId: "me",
