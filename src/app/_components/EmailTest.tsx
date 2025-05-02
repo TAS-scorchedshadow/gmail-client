@@ -2,10 +2,8 @@
 
 import { api } from "~/trpc/react";
 import MailPage from "./mail/mail-page";
+import { Button } from "~/components/ui/button";
 
 export default function EmailTest() {
-  // const data = api.email.getEmails.useQuery();
-  // const { data } = api.email.getAllThreads.useQuery();
-  // console.log(data);
   return <MailPage />;
 }

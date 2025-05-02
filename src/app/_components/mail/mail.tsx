@@ -29,6 +29,7 @@ import { MailList } from "./mail-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Input } from "~/components/ui/input";
 import type { Mail } from "./data";
+import { useState } from "react";
 
 interface MailProps {
   accounts: {
@@ -52,6 +53,18 @@ export function Mail({
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed);
   const [mail] = mails;
 
+  const [activeThreadId, setActiveThreadId] = useState("");
+
+  const mail_temp: Mail = {
+    id: "1",
+    subject: "Hello",
+    name: "John Doe",
+    date: new Date().toDateString(),
+    email: "redman29h@gmail.coppm",
+    text: "asijdoaisjdoiasjdoisa",
+    read: true,
+    labels: [],
+  };
   return (
     <TooltipProvider delayDuration={0}>
       <ResizablePanelGroup
@@ -203,18 +216,24 @@ export function Mail({
               </form>
             </div>
             <TabsContent value="all" className="m-0">
-              <MailList items={mails} />
+              <MailList
+                items={mails}
+                activeThreadId={activeThreadId}
+                setActiveThreadId={setActiveThreadId}
+              />
             </TabsContent>
             <TabsContent value="unread" className="m-0">
-              <MailList items={mails.filter((item) => !item.read)} />
+              <MailList
+                items={mails.filter((item) => !item.read)}
+                activeThreadId={activeThreadId}
+                setActiveThreadId={setActiveThreadId}
+              />
             </TabsContent>
           </Tabs>
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={defaultLayout[2]} minSize={30}>
-          <MailDisplay
-            mail={mails.find((item) => item.id === mail?.selected) || null}
-          />
+          <MailDisplay mail={mail_temp} activeThreadId={activeThreadId} />
         </ResizablePanel>
       </ResizablePanelGroup>
     </TooltipProvider>

@@ -1,4 +1,9 @@
-import { useState, type ComponentProps } from "react";
+import {
+  useState,
+  type ComponentProps,
+  type SetStateAction,
+  type Dispatch,
+} from "react";
 import { cn } from "~/lib/utils";
 import { mails } from "../data";
 import type { gmail_v1 } from "googleapis/build/src/apis/gmail/v1";
@@ -9,38 +14,41 @@ import { formatDistanceToNow } from "date-fns/formatDistanceToNow";
 
 export default function ThreadPreview({
   thread,
+  activeThreadId,
+  setActiveThreadId,
 }: {
   thread: gmail_v1.Schema$Thread;
+  activeThreadId: string;
+  setActiveThreadId: Dispatch<SetStateAction<string>>;
 }) {
   const [mail, setMail] = useState(mails);
 
   const { data } = api.email.getThread.useQuery({ threadId: thread.id! });
+  const mut = api.email.updateThread.useMutation();
 
   const message = data?.data.messages[0];
 
   const headers = message?.payload?.headers;
   const labels = message?.labelIds;
 
-  console.log(message);
   const _sender =
     headers?.find((h) => h.name === "From")?.value?.split("<")[0] ?? "Unknown";
   const sender = elipseSubstring(_sender, 40);
   const subject =
     headers?.find((h) => h.name === "Subject")?.value ?? "Unknown";
   const date = headers?.find((h) => h.name === "Date")?.value;
+
   return (
     <button
       key={thread.id}
       className={cn(
         "hover:bg-accent flex h-28 w-full flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all",
-        mail.selected === thread.id && "bg-muted",
+        activeThreadId === thread.id && "bg-muted",
       )}
-      onClick={() =>
-        setMail({
-          ...mail,
-          selected: thread.id,
-        })
-      }
+      onClick={() => {
+        mut.mutate({ threadId: thread.id! });
+        setActiveThreadId(thread.id!);
+      }}
     >
       <div className="flex w-full flex-col gap-1">
         <div className="flex items-center">

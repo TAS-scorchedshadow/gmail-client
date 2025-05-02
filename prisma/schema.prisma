@@ -27,6 +27,21 @@ model Post {
     @@index([name])
 }
 
+model Thread {
+    id       String    @id
+    user     User      @relation(fields: [userId], references: [id])
+    userId   String
+    messages Message[]
+}
+
+model Message {
+    id       String @id
+    metaData Json
+    s3Link   String
+    thread   Thread @relation(fields: [threadId], references: [id])
+    threadId String
+}
+
 // Necessary for Next auth
 model Account {
     id                       String  @id @default(cuid())
@@ -64,6 +79,7 @@ model User {
     accounts      Account[]
     sessions      Session[]
     posts         Post[]
+    threads       Thread[]
 }
 
 model VerificationToken {

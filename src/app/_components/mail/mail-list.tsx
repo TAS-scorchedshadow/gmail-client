@@ -7,6 +7,8 @@ import {
   useRef,
   useCallback,
   useEffect,
+  type SetStateAction,
+  type Dispatch,
 } from "react";
 import { cn } from "~/lib/utils";
 import { mails, type Mail } from "./data";
@@ -18,9 +20,13 @@ interface MailListProps {
   items: Mail[];
 }
 
-export function MailList({ items }: MailListProps) {
-  const [mail, setMail] = useState(mails);
-
+export function MailList({
+  activeThreadId,
+  setActiveThreadId,
+}: {
+  activeThreadId: string;
+  setActiveThreadId: Dispatch<SetStateAction<string>>;
+}) {
   const {
     status,
     data,
@@ -56,7 +62,7 @@ export function MailList({ items }: MailListProps) {
         const { scrollHeight, scrollTop, clientHeight } = containerRefElement;
         //once the user has scrolled within 500px of the bottom of the table, fetch more data if we can
         if (
-          scrollHeight - scrollTop - clientHeight < 500 &&
+          scrollHeight - scrollTop - clientHeight < 200 &&
           !isFetching &&
           hasNextPage
         ) {
@@ -121,14 +127,17 @@ export function MailList({ items }: MailListProps) {
                     "Nothing more to load"
                   )
                 ) : (
-                  <ThreadPreview thread={thread} />
+                  <ThreadPreview
+                    thread={thread}
+                    activeThreadId={activeThreadId}
+                    setActiveThreadId={setActiveThreadId}
+                  />
                 )}
               </div>
             );
           })}
         </div>
       </div>
-      )
       <div>
         {isFetching && !isFetchingNextPage ? "Background Updating..." : null}
       </div>
