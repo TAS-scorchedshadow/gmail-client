@@ -11,35 +11,37 @@ import elipseSubstring from "~/app/utils/substring";
 import { api } from "~/trpc/react";
 import { useEffect, useState } from "react";
 import DOMPurify from "dompurify";
+import type { DBMessage } from "~/server/types";
 
 export default function Message({
   message,
 }: {
-  message: gmail_v1.Schema$Message;
+  // Currently coerces to link into of s3link ????????
+  message: DBMessage;
 }) {
   // const { data } = api.email.getS3Bucket.useQuery({
   //   key: `message-${message.id}`,
   // });
 
-  const [html, setHtml] = useState(message.snippet);
+  const [html, setHtml] = useState<string>("");
   useEffect(() => {
+    console.log(message);
     fetch(message.s3Link)
       .then((res) => {
-        console.log(res);
         return res.text();
       })
-      .then((resp) => setHtml(resp));
+      .then((resp) => setHtml(resp))
+      .catch((err) => "Error" + console.log(err));
   }, [message]);
+  console.log(message);
 
-  const headers = message?.payload?.headers;
-  const labels = message?.labelIds;
+  const headers = message.headers;
 
   const _sender =
-    headers?.find((h) => h.name === "From")?.value?.split("<")[0] ?? "Unknown";
+    headers?.find((h) => h.key === "From")?.line?.split("<")[0] ?? "Unknown";
   const sender = elipseSubstring(_sender, 40);
-  const subject =
-    headers?.find((h) => h.name === "Subject")?.value ?? "Unknown";
-  const date = headers?.find((h) => h.name === "Date")?.value;
+  const subject = headers?.find((h) => h.key === "Subject")?.line ?? "Unknown";
+  const date = headers?.find((h) => h.key === "Date")?.line;
 
   return (
     <div className="mb-10 flex flex-1 flex-col">
@@ -70,7 +72,7 @@ export default function Message({
       </div>
       <Separator />
       <div className="flex-1 p-4 text-sm whitespace-pre-wrap">
-        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html!) }} />
+        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }} />
       </div>
     </div>
   );

@@ -11,60 +11,60 @@ import { api } from "~/trpc/react";
 import elipseSubstring from "~/app/utils/substring";
 import { Badge } from "~/components/ui/badge";
 import { formatDistanceToNow } from "date-fns/formatDistanceToNow";
+import { useSafeContext } from "../providers/useSafeContext";
+import { ThreadContext } from "../providers/ThreadContext";
+import type { DBThread } from "~/server/types";
 
-export default function ThreadPreview({
-  thread,
-  activeThreadId,
-  setActiveThreadId,
-}: {
-  thread: gmail_v1.Schema$Thread;
-  activeThreadId: string;
-  setActiveThreadId: Dispatch<SetStateAction<string>>;
-}) {
+export default function ThreadPreview({ thread }: { thread: DBThread }) {
   const [mail, setMail] = useState(mails);
 
-  const { data } = api.email.getThread.useQuery({ threadId: thread.id! });
-  const mut = api.email.updateThread.useMutation();
+  const { activeThread, setActiveThread } = useSafeContext(ThreadContext);
 
-  const message = data?.data.messages[0];
+  if (thread.messages.length === 0) {
+    return <div>Loading</div>;
+  }
 
-  const headers = message?.payload?.headers;
-  const labels = message?.labelIds;
+  const message = thread.messages[0]!;
+
+  const headers = message.headers;
+
+  if (!headers) {
+    return <div>Loading</div>;
+  }
 
   const _sender =
-    headers?.find((h) => h.name === "From")?.value?.split("<")[0] ?? "Unknown";
+    headers.find((h) => h.key === "from")?.line.split("<")[0] ?? "Unknown";
   const sender = elipseSubstring(_sender, 40);
-  const subject =
-    headers?.find((h) => h.name === "Subject")?.value ?? "Unknown";
-  const date = headers?.find((h) => h.name === "Date")?.value;
+  const subject = headers.find((h) => h.key === "subject")?.line ?? "Unknown";
+  const date = headers?.find((h) => h.key === "date")?.line;
 
   return (
     <button
       key={thread.id}
       className={cn(
         "hover:bg-accent flex h-28 w-full flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all",
-        activeThreadId === thread.id && "bg-muted",
+        activeThread.id === thread.id && "bg-muted",
       )}
       onClick={() => {
-        mut.mutate({ threadId: thread.id! });
-        setActiveThreadId(thread.id!);
+        // mut.mutate({threadId: thread.id! });
+        setActiveThread(thread);
       }}
     >
       <div className="flex w-full flex-col gap-1">
         <div className="flex items-center">
           <div className="flex items-center gap-2">
             <div className="font-semibold">{sender}</div>
-            {
+            {/* {
               labels?.includes("UNREAD") && (
                 <span className="flex h-2 w-2 rounded-full bg-blue-600" />
               )
               // Has been read
-            }
+            } */}
           </div>
           <div
             className={cn(
               "ml-auto text-xs",
-              mail.selected === thread.id
+              thread.id === activeThread.id
                 ? "text-foreground"
                 : "text-muted-foreground",
             )}
@@ -81,7 +81,7 @@ export default function ThreadPreview({
         </div>
       </div>
       <div className="text-muted-foreground line-clamp-2 text-xs">
-        {elipseSubstring(message?.snippet ?? "", 110)}
+        {elipseSubstring(message.snippet, 110)}
       </div>
 
       {/* {labels?.length ? (

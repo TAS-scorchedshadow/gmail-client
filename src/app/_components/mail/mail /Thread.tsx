@@ -10,28 +10,20 @@ import type { gmail_v1 } from "googleapis/build/src/apis/gmail/v1";
 import elipseSubstring from "~/app/utils/substring";
 import Message from "./Message";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import type { DBThread } from "~/server/types";
 
-interface Thread {
-  historyId?: string | null | undefined;
-  id?: string | null | undefined;
-  messages?: gmail_v1.Schema$Message[] | undefined;
-  snippet?: string | null | undefined;
-}
+export default function Thread({ thread }: { thread: DBThread }) {
+  const messages = thread.messages;
+  const message = thread.messages[0];
 
-export default function Thread({ thread }: { thread: Thread }) {
-  console.log(thread);
-  const messages = thread?.messages;
-  const message = thread?.messages[0];
-
-  const headers = message?.payload?.headers;
-  console.log(thread);
+  const headers = message?.headers;
 
   const _sender =
-    headers?.find((h) => h.name === "From")?.value?.split("<")[0] ?? "Unknown";
+    headers?.find((h) => h.key === "From")?.line?.split("<")[0] ?? "Unknown";
   const sender = elipseSubstring(_sender, 40);
-  const subject =
-    headers?.find((h) => h.name === "Subject")?.value ?? "Unknown";
-  const date = headers?.find((h) => h.name === "Date")?.value;
+  const subject = headers?.find((h) => h.key === "Subject")?.line ?? "Unknown";
+  const date = headers?.find((h) => h.line === "Date")?.line;
+  console.log(thread);
 
   return (
     <div className="flex flex-1 flex-col">

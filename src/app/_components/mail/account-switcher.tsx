@@ -24,7 +24,7 @@ export function AccountSwitcher({
   accounts,
 }: AccountSwitcherProps) {
   const [selectedAccount, setSelectedAccount] = React.useState<string>(
-    accounts[0].email,
+    accounts[0]!.email,
   );
 
   return (

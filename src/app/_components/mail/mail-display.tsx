@@ -35,25 +35,15 @@ import {
 } from "~/components/ui/popover";
 import { api } from "~/trpc/react";
 import Thread from "./mail /Thread";
+import { useSafeContext } from "./providers/useSafeContext";
+import { ThreadContext } from "./providers/ThreadContext";
 
-interface MailDisplayProps {
-  mail: Mail | null;
-}
-
-export function MailDisplay({
-  mail,
-  activeThreadId,
-}: {
-  mail: MailDisplayProps;
-  activeThreadId: string;
-}) {
+export function MailDisplay() {
   const today = new Date();
 
-  const { data } = api.email.getThreadWithMessages.useQuery({
-    threadId: activeThreadId,
-  });
-  // console.log(data);
+  const { activeThread } = useSafeContext(ThreadContext);
 
+  const mail = activeThread;
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center p-2">
@@ -192,11 +182,8 @@ export function MailDisplay({
         </DropdownMenu>
       </div>
       <Separator />
-      {mail ? (
-        <div>
-          {activeThreadId + "====================="}
-          <Thread thread={data} />
-        </div>
+      {activeThread.id !== "default" ? (
+        <Thread thread={activeThread} />
       ) : (
         <div className="text-muted-foreground p-8 text-center">
           No message selected

@@ -9,24 +9,22 @@ import {
   useEffect,
   type SetStateAction,
   type Dispatch,
+  useContext,
 } from "react";
 import { cn } from "~/lib/utils";
 import { mails, type Mail } from "./data";
 import { api } from "~/trpc/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import ThreadPreview from "./mail /ThreadPreview";
+import { ThreadContext } from "./providers/ThreadContext";
+import { useSafeContext } from "./providers/useSafeContext";
 
 interface MailListProps {
   items: Mail[];
 }
 
-export function MailList({
-  activeThreadId,
-  setActiveThreadId,
-}: {
-  activeThreadId: string;
-  setActiveThreadId: Dispatch<SetStateAction<string>>;
-}) {
+export function MailList() {
+  const { query } = useSafeContext(ThreadContext);
   const {
     status,
     data,
@@ -35,16 +33,9 @@ export function MailList({
     isFetchingNextPage,
     fetchNextPage,
     hasNextPage,
-  } = api.email.getThreadsPaginated.useInfiniteQuery(
-    {
-      maxResults: 25,
-    },
-    {
-      getNextPageParam: (lastPage) => lastPage.cursor,
-    },
-  );
+  } = query;
 
-  const allRows = data ? data.pages.flatMap((d) => d.data.threads) : [];
+  const allRows = data ? data.pages.flatMap((d) => d.data) : [];
 
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -127,11 +118,7 @@ export function MailList({
                     "Nothing more to load"
                   )
                 ) : (
-                  <ThreadPreview
-                    thread={thread}
-                    activeThreadId={activeThreadId}
-                    setActiveThreadId={setActiveThreadId}
-                  />
+                  <ThreadPreview thread={thread} />
                 )}
               </div>
             );
