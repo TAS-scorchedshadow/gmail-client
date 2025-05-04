@@ -142,19 +142,20 @@ async function updateThread(
   }
 
   const thread2 = threadsResp.data;
+  if (!thread2.id) {
+    console.log("**********************", thread2);
+    return false;
+  }
 
-  console.log(thread2);
   let dbThread = await db.thread.upsert({
     where: {
-      id: thread2.id!,
+      id: thread2.id,
     },
     create: {
-      id: thread2.id!,
-      snippet: thread2.snippet ?? "",
+      id: thread2.id,
       userId: userId,
     },
     update: {
-      snippet: thread2.snippet ?? "",
       userId: userId,
     },
   });
@@ -166,8 +167,13 @@ async function updateThread(
       }
 
       const resp = await getMessage(gmail, id, "raw");
+
       const data = resp.data;
-      const rawContent = Buffer.from(data.raw!, "base64").toString("utf-8");
+      if (!data.id || !data.raw) {
+        return false;
+      }
+
+      const rawContent = Buffer.from(data.raw, "base64").toString("utf-8");
       const parsed: ParsedMail = await simpleParser(rawContent);
       if (!parsed.html) {
         return false;
@@ -197,10 +203,10 @@ async function updateThread(
       }
 
       const toInsert: DBMessage = {
-        id: resp.data.id!,
+        id: data.id,
         s3Link: link,
         headers: [...parsed.headerLines],
-        subject: parsed.subject,
+        subject: parsed.subject.toString(),
         date: parsed.date,
         to: Array.isArray(parsed.to)
           ? parseAddressMany(parsed.to)
@@ -217,7 +223,7 @@ async function updateThread(
             : parseAddress(parsed.cc)
           : [],
         replyTo: parsed.replyTo ? parseAddress(parsed.replyTo) : [],
-        inReplyTo: parsed.inReplyTo,
+        inReplyTo: parsed.inReplyTo?.toString(),
         threadId: dbThread.id,
         snippet: (resp.data.snippet ?? "").toString(),
       };
@@ -236,7 +242,19 @@ async function updateThread(
           id: message.id,
         },
         create: message,
-        update: message,
+        update: {
+          s3Link: message.s3Link,
+          headers: message.headers,
+          subject: message.subject,
+          date: message.date,
+          to: message.to,
+          from: message.from,
+          cc: message.cc,
+          bcc: message.bcc,
+          replyTo: message.replyTo,
+          inReplyTo: message.inReplyTo,
+          snippet: message.snippet,
+        },
       });
     }),
   );
@@ -249,7 +267,7 @@ export const emailRouter = createTRPCRouter({
     const gmail = getGmailClient(ctx.session.accessToken);
     const res = await gmail.users.messages.list({
       userId: "me",
-      maxResults: 10,
+      maxResults: 100,
     });
 
     const messages = res.data.messages;
@@ -395,7 +413,7 @@ export const emailRouter = createTRPCRouter({
     const gmail = getGmailClient(ctx.session.accessToken);
     const res = await gmail.users.threads.list({
       userId: "me",
-      maxResults: 100,
+      maxResults: 10,
     });
 
     if (!res.data.threads || res.data.threads.length === 0) {
@@ -413,10 +431,11 @@ export const emailRouter = createTRPCRouter({
 
     const finished = await Promise.all(
       threadResp.map((thread) => {
-        if (!thread) {
+        if (!thread || !thread.id) {
+          console.log("error", thread);
           return false;
         }
-        updateThread(ctx.db, gmail, ctx.session.user.id, thread.id!);
+        updateThread(ctx.db, gmail, ctx.session.user.id, thread.id);
       }),
     );
     return finished;

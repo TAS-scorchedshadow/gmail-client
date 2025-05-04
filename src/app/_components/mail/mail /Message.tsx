@@ -37,11 +37,13 @@ export default function Message({
 
   const headers = message.headers;
 
+  console.log(headers);
+
   const _sender =
-    headers?.find((h) => h.key === "From")?.line?.split("<")[0] ?? "Unknown";
+    headers.find((h) => h.key === "from")?.line.split("<")[0] ?? "Unknown";
   const sender = elipseSubstring(_sender, 40);
-  const subject = headers?.find((h) => h.key === "Subject")?.line ?? "Unknown";
-  const date = headers?.find((h) => h.key === "Date")?.line;
+  const subject = headers.find((h) => h.key === "subject")?.line ?? "Unknown";
+  const date = headers?.find((h) => h.key === "date")?.line;
 
   return (
     <div className="mb-10 flex flex-1 flex-col">
