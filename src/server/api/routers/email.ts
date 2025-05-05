@@ -1,7 +1,7 @@
 import { gmail_v1, google } from "googleapis";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
-import type { PrismaClient, Thread } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { simpleParser, type ParsedMail, type AddressObject } from "mailparser";
 import {
@@ -11,17 +11,9 @@ import {
   type PutObjectCommandInput,
 } from "@aws-sdk/client-s3";
 
-import {
-  getSignedUrl,
-  S3RequestPresigner,
-} from "@aws-sdk/s3-request-presigner";
-import type { JSONObject } from "node_modules/superjson/dist/types";
-import type { InputJsonObject } from "@prisma/client/runtime/library";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { type DBAddress, type DBMessage, type DBThread } from "~/server/types";
-import { parse } from "path";
-import { threadId } from "worker_threads";
 import { assert } from "console";
-import { text } from "stream/consumers";
 
 function getGmailClient(access_token: string | null) {
   if (!access_token) {
@@ -34,8 +26,6 @@ function getGmailClient(access_token: string | null) {
   auth.setCredentials({ access_token: access_token });
   return google.gmail({ version: "v1", auth });
 }
-
-type DB = PrismaClient;
 
 async function getThread(gmailClient: gmail_v1.Gmail, threadId: string) {
   try {
@@ -178,10 +168,10 @@ async function updateThread(
       }
 
       function parseAddress(address: AddressObject): DBAddress[] {
-        return address.value.map((x) => {
+        return address.value.map((val) => {
           return {
-            name: x.name,
-            email: x.address,
+            name: val.name,
+            email: val.address,
           };
         });
       }
@@ -334,8 +324,6 @@ export const emailRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const gmail = getGmailClient(ctx.session.accessToken);
-
       if (!input.cursor) {
         const res = await ctx.db.thread.findMany({
           take: input.maxResults,
@@ -461,41 +449,4 @@ export const emailRouter = createTRPCRouter({
     );
     return finished;
   }),
-
-  getThreadWithMessages: protectedProcedure
-    .input(
-      z.object({
-        threadId: z.string(),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const res = await ctx.db.thread.findFirst({
-        where: {
-          id: input.threadId,
-        },
-        include: {
-          messages: true,
-        },
-      });
-      if (!res) {
-        throw new TRPCError({ code: "NOT_FOUND" });
-      }
-
-      return { ...res, messages: res.messages.map((x) => x as DBMessage) };
-    }),
-
-  getMessage: protectedProcedure
-    .input(
-      z.object({
-        messageId: z.string(),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const gmail = getGmailClient(ctx.session.accessToken);
-      const res = gmail.users.messages.get({
-        userId: "me",
-        id: input.messageId,
-      });
-      return res;
-    }),
 });

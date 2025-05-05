@@ -6,7 +6,7 @@ import { api } from "~/trpc/react";
 export default function MailPage() {
   const defaultLayout = "react-resizable-panels:layout:mail";
   const defaultCollapsed = "react-resizable-panels:collapsed";
-  const mut = api.email.pullUpdates.useMutation();
+  const mut = api.email.pullUpdates.useMutation({});
 
   return (
     <div className="flex w-full flex-col">
