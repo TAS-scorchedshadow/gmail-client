@@ -6,7 +6,6 @@ import EmailTest from "./_components/EmailTest";
 import { redirect } from "next/navigation";
 
 export default async function Home() {
-  const hello = await api.post.hello({ text: "from tRPC" });
   const session = await auth();
 
   if (!session?.user) {
