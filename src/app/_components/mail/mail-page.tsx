@@ -10,7 +10,9 @@ export default function MailPage() {
 
   return (
     <div className="flex w-full flex-col">
-      <Button onClick={() => mut.mutate()}>Pull Data</Button>
+      <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
+        {mut.isPending ? "Pulling..." : "Pull Data"}
+      </Button>
       <Mail
         accounts={accounts}
         mails={mails}

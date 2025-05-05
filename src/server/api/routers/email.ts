@@ -225,29 +225,28 @@ async function updateThread(
   // Remove failed parses
   const messages = parsedMessages.filter((x) => x) as DBMessage[];
 
-  const x = await Promise.all(
-    messages.map(async (message) => {
-      await db.message.upsert({
-        where: {
-          id: message.id,
-        },
-        create: message,
-        update: {
-          s3Link: message.s3Link,
-          headers: message.headers,
-          subject: message.subject,
-          date: message.date,
-          to: message.to,
-          from: message.from,
-          cc: message.cc,
-          bcc: message.bcc,
-          replyTo: message.replyTo,
-          inReplyTo: message.inReplyTo,
-          snippet: message.snippet,
-        },
-      });
-    }),
-  );
+  const operations = messages.map((message) => {
+    return db.message.upsert({
+      where: {
+        id: message.id,
+      },
+      create: message,
+      update: {
+        s3Link: message.s3Link,
+        headers: message.headers,
+        subject: message.subject,
+        date: message.date,
+        to: message.to,
+        from: message.from,
+        cc: message.cc,
+        bcc: message.bcc,
+        replyTo: message.replyTo,
+        inReplyTo: message.inReplyTo,
+        snippet: message.snippet,
+      },
+    });
+  });
+  await db.$transaction(operations);
 
   return true;
 }
@@ -408,18 +407,48 @@ export const emailRouter = createTRPCRouter({
 
   pullUpdates: protectedProcedure.mutation(async ({ ctx }) => {
     const gmail = getGmailClient(ctx.session.accessToken);
-    const res = await gmail.users.threads.list({
-      userId: "me",
-      maxResults: parseInt(process.env.MAX_RECENT_EMAILS!),
-    });
 
-    if (!res.data.threads || res.data.threads.length === 0) {
+    let nextPageToken: string | undefined = undefined;
+
+    let threads: gmail_v1.Schema$Thread[] = [];
+    while (threads.length < 200) {
+      const res = await gmail.users.threads.list({
+        userId: "me",
+        pageToken: nextPageToken,
+        maxResults: 500, // Max allowed by gmail api
+      });
+      if (!res.data) {
+        assert("This should not happen");
+        break;
+      }
+
+      for (const thread of res.data.threads ?? []) {
+        threads.push(thread);
+      }
+
+      if (!res.data.nextPageToken) {
+        break;
+      } else {
+        nextPageToken = res.data.nextPageToken;
+      }
+    }
+
+    if (threads.length === 0) {
       console.log("No threads found.");
       return;
     }
 
     const threadResp = await Promise.all(
-      res.data.threads.map(async ({ id }) => getThread(gmail, id!)),
+      threads.map(async ({ id }) => {
+        if (!id) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Gmail thread list returned a thread with a missing id",
+          });
+        }
+
+        return getThread(gmail, id);
+      }),
     );
     if (!threadResp || threadResp.length === 0) {
       console.log("No threads found.");
