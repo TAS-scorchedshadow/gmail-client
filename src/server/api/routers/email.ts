@@ -2,15 +2,11 @@ import { gmail_v1, google } from "googleapis";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient, Thread } from "@prisma/client";
-import { date, z } from "zod";
+import { z } from "zod";
 import { simpleParser, type ParsedMail, type AddressObject } from "mailparser";
 import {
   S3Client,
   PutObjectCommand,
-  CreateBucketCommand,
-  DeleteObjectCommand,
-  DeleteBucketCommand,
-  paginateListObjectsV2,
   GetObjectCommand,
   type PutObjectCommandInput,
 } from "@aws-sdk/client-s3";
@@ -70,11 +66,6 @@ const s3 = new S3Client();
 
 async function putS3Bucket(key: string, body: PutObjectCommandInput["Body"]) {
   try {
-    const command = new PutObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME,
-      Key: key,
-      Body: body,
-    });
     const res = await s3.send(
       new PutObjectCommand({
         Bucket: process.env.S3_BUCKET_NAME,
@@ -108,7 +99,7 @@ async function getFromS3Bucket(key: string) {
     });
   }
 }
-async function getSingedUrlS3Bucket(key: string) {
+async function getSignedUrlS3(key: string) {
   try {
     const command = new GetObjectCommand({
       Bucket: process.env.S3_BUCKET_NAME,
@@ -119,7 +110,6 @@ async function getSingedUrlS3Bucket(key: string) {
     });
     return signedUrl;
   } catch (error) {
-    console.log("FAILLLLED");
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
       message: `Failed to get HTML from bucket - key:${key}`,
@@ -144,7 +134,6 @@ async function updateThread(
 
   const thread2 = threadsResp.data;
   if (!thread2.id) {
-    console.log("**********************", thread2);
     return false;
   }
 
@@ -167,9 +156,9 @@ async function updateThread(
         return false;
       }
 
-      const resp = await getMessage(gmail, id, "raw");
+      const message = await getMessage(gmail, id, "raw");
 
-      const data = resp.data;
+      const data = message.data;
       if (!data.id || !data.raw) {
         return false;
       }
@@ -181,7 +170,7 @@ async function updateThread(
       }
 
       await putS3Bucket(`message-${id}`, parsed.html);
-      const link = await getSingedUrlS3Bucket(`message-${id}`);
+      const link = await getSignedUrlS3(`message-${id}`);
 
       if (!parsed.subject || !parsed.from || !parsed.date || !parsed.to) {
         return false;
@@ -226,7 +215,7 @@ async function updateThread(
         replyTo: parsed.replyTo ? parseAddress(parsed.replyTo) : [],
         inReplyTo: parsed.inReplyTo?.toString(),
         threadId: dbThread.id,
-        snippet: (resp.data.snippet ?? "").toString(),
+        snippet: (message.data.snippet ?? "").toString(),
       };
 
       return toInsert;
@@ -421,7 +410,7 @@ export const emailRouter = createTRPCRouter({
     const gmail = getGmailClient(ctx.session.accessToken);
     const res = await gmail.users.threads.list({
       userId: "me",
-      maxResults: 10,
+      maxResults: parseInt(process.env.MAX_RECENT_EMAILS!),
     });
 
     if (!res.data.threads || res.data.threads.length === 0) {
@@ -448,77 +437,6 @@ export const emailRouter = createTRPCRouter({
     );
     return finished;
   }),
-
-  // updateThread: protectedProcedure
-  //   .input(
-  //     z.object({
-  //       threadId: z.string(),
-  //     }),
-  //   )
-  //   .mutation(async ({ ctx, input }) => {
-  //     const gmail = getGmailClient(ctx.session.accessToken);
-  //     const threadsResp = await gmail.users.threads.get({
-  //       userId: "me",
-  //       format: "minimal",
-  //       id: input.threadId,
-  //     });
-  //     if (!threadsResp) {
-  //       throw new TRPCError({ code: "NOT_FOUND" });
-  //     }
-
-  //     const thread2 = threadsResp.data;
-
-  //     const messages = await Promise.all(
-  //       thread2.messages!.map(async ({ id }) => {
-  //         const data = await getMessage(gmail, id!, "raw");
-  //         const rawContent = Buffer.from(data.data.raw!, "base64").toString(
-  //           "utf-8",
-  //         );
-  //         let parsed = await simpleParser(rawContent);
-  //         await putS3Bucket(`message-${id}`, parsed.html);
-  //         const link = await getSingedUrlS3Bucket(`message-${id}`);
-  //         return { ...data, link };
-  //       }),
-  //     );
-
-  //     let dbThread = await ctx.db.thread.findFirst({
-  //       where: {
-  //         id: thread2.id!,
-  //       },
-  //     });
-  //     if (!dbThread) {
-  //       dbThread = await ctx.db.thread.create({
-  //         data: {
-  //           id: thread2.id!,
-  //           userId: ctx.session.user.id,
-  //         },
-  //       });
-  //     }
-  //     const x = await Promise.all(
-  //       messages.map(async (message) => {
-  //         console.log(message);
-  //         const metaDataPayload = message.payload as InputJsonObject;
-  //         const toInsert = { ...message, payload: metaDataPayload, raw: {} };
-  //         await ctx.db.message.upsert({
-  //           where: {
-  //             id: message.id!,
-  //           },
-  //           create: {
-  //             id: message.id!,
-  //             threadId: thread2.id!,
-  //             metaData: toInsert,
-  //             s3Link: message.link,
-  //           },
-  //           update: {
-  //             metaData: toInsert,
-  //             s3Link: message.link,
-  //           },
-  //         });
-  //       }),
-  //     );
-
-  //     return { ...thread2, rawMessages: messages };
-  //   }),
 
   getThreadWithMessages: protectedProcedure
     .input(
