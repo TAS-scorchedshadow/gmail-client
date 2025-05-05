@@ -184,7 +184,13 @@ async function updateThread(
           };
         });
       }
-      function parseAddressMany(addresses: AddressObject[]): DBAddress[] {
+
+      function parseAddressMany(
+        addresses: AddressObject[] | AddressObject,
+      ): DBAddress[] {
+        if (!Array.isArray(addresses)) {
+          addresses = [addresses];
+        }
         const rtn: DBAddress[] = [];
         addresses.forEach((address) => {
           rtn.push(...parseAddress(address));
@@ -230,7 +236,7 @@ async function updateThread(
       where: {
         id: message.id,
       },
-      create: message,
+      create: { ...message },
       update: {
         s3Link: message.s3Link,
         headers: message.headers,
@@ -341,7 +347,7 @@ export const emailRouter = createTRPCRouter({
 
       if (!input.cursor) {
         const res = await ctx.db.thread.findMany({
-          take: 100,
+          take: input.maxResults,
           where: {
             userId: ctx.session.user.id,
           },
@@ -360,7 +366,7 @@ export const emailRouter = createTRPCRouter({
       }
 
       const res = await ctx.db.thread.findMany({
-        take: 100,
+        take: input.maxResults,
         skip: 1,
         cursor: {
           id: input.cursor,
@@ -380,13 +386,9 @@ export const emailRouter = createTRPCRouter({
       }
       const last = res[res.length - 1]!;
 
-      const out = res.map((thread) => {
-        const messages = thread.messages as DBMessage[];
-        return { ...thread, messages };
-      });
       assert(last !== undefined);
 
-      return { data: out, cursor: last.id };
+      return { data: res, cursor: last.id };
     }),
 
   getThread: protectedProcedure
@@ -410,31 +412,16 @@ export const emailRouter = createTRPCRouter({
 
     let nextPageToken: string | undefined = undefined;
 
-    let threads: gmail_v1.Schema$Thread[] = [];
-    while (threads.length < 200) {
-      // @ts-expect-error
-      const res = await gmail.users.threads.list({
-        userId: "me",
-        pageToken: nextPageToken,
-        maxResults: 500, // Max allowed by gmail api
-      });
-      if (!res.data) {
-        assert("This should not happen");
-        break;
-      }
-
-      for (const thread of res.data.threads ?? []) {
-        threads.push(thread);
-      }
-
-      if (!res.data.nextPageToken) {
-        break;
-      } else {
-        nextPageToken = res.data.nextPageToken;
-      }
+    const res = await gmail.users.threads.list({
+      userId: "me",
+      maxResults: 300, // Max allowed by gmail api
+    });
+    if (!res.data) {
+      assert("This should not happen");
     }
 
-    if (threads.length === 0) {
+    const threads = res.data.threads;
+    if (!threads || threads.length === 0) {
       console.log("No threads found.");
       return;
     }

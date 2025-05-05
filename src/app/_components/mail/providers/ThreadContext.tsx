@@ -55,11 +55,11 @@ export const ThreadProvider = ({ children }: { children: ReactNode }) => {
   });
   const query = api.email.getThreadsPaginated.useInfiniteQuery(
     {
-      maxResults: 25,
+      maxResults: 50,
     },
     {
       getNextPageParam: (lastPage) => {
-        if (lastPage.data.length < 25) return undefined;
+        if (lastPage.data.length < 50) return undefined;
         return lastPage.cursor;
       },
     },

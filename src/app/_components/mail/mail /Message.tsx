@@ -12,6 +12,7 @@ import { api } from "~/trpc/react";
 import { useEffect, useState } from "react";
 import DOMPurify from "dompurify";
 import type { DBMessage } from "~/server/types";
+import { unescape } from "lodash";
 
 export default function Message({
   message,
@@ -33,16 +34,11 @@ export default function Message({
       .then((resp) => setHtml(resp))
       .catch((err) => "Error" + console.log(err));
   }, [message]);
-  console.log(message);
 
   const headers = message.headers;
 
-  console.log(headers);
-
-  const _sender =
-    headers.find((h) => h.key === "from")?.line.split("<")[0] ?? "Unknown";
+  const _sender = message.from.map((f) => f.name).join(", ");
   const sender = elipseSubstring(_sender, 40);
-  const subject = headers.find((h) => h.key === "subject")?.line ?? "Unknown";
   const date = headers?.find((h) => h.key === "date")?.line;
 
   return (
@@ -59,10 +55,9 @@ export default function Message({
             </AvatarFallback>
           </Avatar>
           <div className="grid gap-1">
-            <div className="font-semibold">{sender}</div>
-            <div className="line-clamp-1 text-xs">{subject}</div>
+            <div className="font-semibold">{unescape(sender)}</div>
             <div className="line-clamp-1 text-xs">
-              <span className="font-medium">Reply-To:</span> {"Reply to email"}
+              {unescape(message.subject)}
             </div>
           </div>
         </div>

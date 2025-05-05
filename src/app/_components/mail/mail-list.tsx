@@ -53,7 +53,7 @@ export function MailList() {
         const { scrollHeight, scrollTop, clientHeight } = containerRefElement;
         //once the user has scrolled within 500px of the bottom of the table, fetch more data if we can
         if (
-          scrollHeight - scrollTop - clientHeight < 200 &&
+          scrollHeight - scrollTop - clientHeight < 500 &&
           !isFetching &&
           hasNextPage
         ) {

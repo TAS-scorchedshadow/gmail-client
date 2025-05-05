@@ -14,10 +14,9 @@ import { formatDistanceToNow } from "date-fns/formatDistanceToNow";
 import { useSafeContext } from "../providers/useSafeContext";
 import { ThreadContext } from "../providers/ThreadContext";
 import type { DBThread } from "~/server/types";
+import { unescape } from "lodash";
 
 export default function ThreadPreview({ thread }: { thread: DBThread }) {
-  const [mail, setMail] = useState(mails);
-
   const { activeThread, setActiveThread } = useSafeContext(ThreadContext);
 
   if (thread.messages.length === 0) {
@@ -32,10 +31,12 @@ export default function ThreadPreview({ thread }: { thread: DBThread }) {
     return <div>Loading</div>;
   }
 
-  const _sender =
-    headers.find((h) => h.key === "from")?.line.split("<")[0] ?? "Unknown";
-  const sender = elipseSubstring(_sender, 40);
-  const subject = headers.find((h) => h.key === "subject")?.line ?? "Unknown";
+  const sender = elipseSubstring(
+    message.from.map((f) => f.name).join(", "),
+    40,
+  );
+
+  console.log(headers);
   const date = headers?.find((h) => h.key === "date")?.line;
 
   return (
@@ -47,13 +48,14 @@ export default function ThreadPreview({ thread }: { thread: DBThread }) {
       )}
       onClick={() => {
         // mut.mutate({threadId: thread.id! });
+        console.log(message.snippet);
         setActiveThread(thread);
       }}
     >
       <div className="flex w-full flex-col gap-1">
         <div className="flex items-center">
           <div className="flex items-center gap-2">
-            <div className="font-semibold">{sender}</div>
+            <div className="font-semibold">{unescape(sender)}</div>
             {/* {
               labels?.includes("UNREAD") && (
                 <span className="flex h-2 w-2 rounded-full bg-blue-600" />
@@ -77,11 +79,11 @@ export default function ThreadPreview({ thread }: { thread: DBThread }) {
           </div>
         </div>
         <div className="text-xs font-medium">
-          {elipseSubstring(subject, 52)}
+          {elipseSubstring(unescape(message.subject), 52)}
         </div>
       </div>
       <div className="text-muted-foreground line-clamp-2 text-xs">
-        {elipseSubstring(message.snippet, 110)}
+        {elipseSubstring(unescape(message.snippet.toString()), 110)}
       </div>
 
       {/* {labels?.length ? (
