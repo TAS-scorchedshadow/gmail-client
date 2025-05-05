@@ -24,6 +24,7 @@ import type { InputJsonObject } from "@prisma/client/runtime/library";
 import { type DBAddress, type DBMessage, type DBThread } from "~/server/types";
 import { parse } from "path";
 import { threadId } from "worker_threads";
+import { assert } from "console";
 
 function getGmailClient(access_token: string | null) {
   if (!access_token) {
@@ -363,6 +364,9 @@ export const emailRouter = createTRPCRouter({
             id: "desc",
           },
         });
+        if (res.length === 0) {
+          return { data: [], cursor: undefined };
+        }
         const last = res[res.length - 1]!;
         return { data: res, cursor: last.id };
       }
@@ -383,12 +387,16 @@ export const emailRouter = createTRPCRouter({
           id: "desc",
         },
       });
+      if (res.length === 0) {
+        return { data: [], cursor: undefined };
+      }
       const last = res[res.length - 1]!;
 
       const out = res.map((thread) => {
         const messages = thread.messages as DBMessage[];
         return { ...thread, messages };
       });
+      assert(last !== undefined);
 
       return { data: out, cursor: last.id };
     }),

@@ -58,7 +58,10 @@ export const ThreadProvider = ({ children }: { children: ReactNode }) => {
       maxResults: 25,
     },
     {
-      getNextPageParam: (lastPage) => lastPage.cursor,
+      getNextPageParam: (lastPage) => {
+        if (lastPage.data.length < 25) return undefined;
+        return lastPage.cursor;
+      },
     },
   );
   return (
