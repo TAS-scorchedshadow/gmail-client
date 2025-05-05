@@ -412,6 +412,7 @@ export const emailRouter = createTRPCRouter({
 
     let threads: gmail_v1.Schema$Thread[] = [];
     while (threads.length < 200) {
+      // @ts-expect-error
       const res = await gmail.users.threads.list({
         userId: "me",
         pageToken: nextPageToken,
