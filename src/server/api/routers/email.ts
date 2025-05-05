@@ -21,6 +21,7 @@ import { type DBAddress, type DBMessage, type DBThread } from "~/server/types";
 import { parse } from "path";
 import { threadId } from "worker_threads";
 import { assert } from "console";
+import { text } from "stream/consumers";
 
 function getGmailClient(access_token: string | null) {
   if (!access_token) {
@@ -204,23 +205,14 @@ async function updateThread(
         headers: [...parsed.headerLines],
         subject: parsed.subject.toString(),
         date: parsed.date,
-        to: Array.isArray(parsed.to)
-          ? parseAddressMany(parsed.to)
-          : parseAddress(parsed.to),
+        to: parseAddressMany(parsed.to),
         from: parseAddress(parsed.from),
-        cc: parsed.cc
-          ? Array.isArray(parsed.cc)
-            ? parseAddressMany(parsed.cc)
-            : parseAddress(parsed.cc)
-          : [],
-        bcc: parsed.cc
-          ? Array.isArray(parsed.cc)
-            ? parseAddressMany(parsed.cc)
-            : parseAddress(parsed.cc)
-          : [],
+        cc: parsed.cc ? parseAddressMany(parsed.cc) : [],
+        bcc: parsed.bcc ? parseAddressMany(parsed.bcc) : [],
         replyTo: parsed.replyTo ? parseAddress(parsed.replyTo) : [],
         inReplyTo: parsed.inReplyTo?.toString(),
         threadId: dbThread.id,
+        text: parsed.text ? parsed.text.toString() : "",
         snippet: (message.data.snippet ?? "").toString(),
       };
 
@@ -249,6 +241,7 @@ async function updateThread(
         replyTo: message.replyTo,
         inReplyTo: message.inReplyTo,
         snippet: message.snippet,
+        text: message.text,
       },
     });
   });
@@ -281,8 +274,6 @@ export const emailRouter = createTRPCRouter({
       });
       console.log(`- ${messageDetails.data.snippet}`); // Example: log the message snippet
     }
-    console.log("============");
-    console.log(res.data.messages);
     return res.data.messages;
   }),
 
@@ -350,6 +341,22 @@ export const emailRouter = createTRPCRouter({
           take: input.maxResults,
           where: {
             userId: ctx.session.user.id,
+            messages: {
+              some: {
+                OR: [
+                  {
+                    subject: {
+                      contains: input.q ?? "",
+                    },
+                  },
+                  {
+                    text: {
+                      contains: input.q ?? "",
+                    },
+                  },
+                ],
+              },
+            },
           },
           include: {
             messages: true,

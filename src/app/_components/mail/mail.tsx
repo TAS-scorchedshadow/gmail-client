@@ -52,9 +52,8 @@ export function Mail({
   navCollapsedSize,
 }: MailProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed);
-  const [mail] = mails;
 
-  const [activeThreadId, setActiveThreadId] = useState("");
+  const [search, setSearch] = React.useState("");
 
   const mail_temp: Mail = {
     id: "1",
@@ -213,16 +212,22 @@ export function Mail({
                 <form>
                   <div className="relative">
                     <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4" />
-                    <Input placeholder="Search" className="pl-8" />
+                    <Input
+                      placeholder="Search"
+                      className="pl-8"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
                   </div>
                 </form>
               </div>
               <TabsContent value="all" className="m-0">
-                <MailList />
+                <MailList search={search} />
               </TabsContent>
               <TabsContent value="unread" className="m-0">
                 <MailList
-                // items={mails.filter((item) => !item.read)}
+                  // items={mails.filter((item) => !item.read)}
+                  search={search}
                 />
               </TabsContent>
             </Tabs>

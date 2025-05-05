@@ -1,30 +1,27 @@
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns/formatDistanceToNow";
-import {
-  useState,
-  type ComponentProps,
-  useRef,
-  useCallback,
-  useEffect,
-  type SetStateAction,
-  type Dispatch,
-  useContext,
-} from "react";
-import { cn } from "~/lib/utils";
-import { mails, type Mail } from "./data";
+import { useRef, useCallback, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import ThreadPreview from "./mail /ThreadPreview";
-import { ThreadContext } from "./providers/ThreadContext";
-import { useSafeContext } from "./providers/useSafeContext";
+import Spinner from "../spinner";
 
-interface MailListProps {
-  items: Mail[];
-}
+const NUM_PER_PAGE = 50;
 
-export function MailList() {
-  const { query } = useSafeContext(ThreadContext);
+export function MailList({ search }: { search: string }) {
+  const query = api.email.getThreadsPaginated.useInfiniteQuery(
+    {
+      maxResults: NUM_PER_PAGE,
+      q: search,
+    },
+    {
+      getNextPageParam: (lastPage) => {
+        if (lastPage.data.length < NUM_PER_PAGE) return undefined;
+        return lastPage.cursor;
+      },
+    },
+  );
   const {
     status,
     data,
@@ -71,7 +68,11 @@ export function MailList() {
   }, [fetchMoreOnBottomReached]);
 
   if (status === "pending") {
-    return <p>Loading...</p>;
+    return (
+      <div className="flex w-full items-center justify-center">
+        <Spinner />
+      </div>
+    );
   }
 
   if (status == "error") {

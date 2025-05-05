@@ -12,34 +12,9 @@ import {
 import { type DBThread } from "~/server/types";
 import { api } from "~/trpc/react";
 
-type queryType = TRPCHookResult &
-  UseInfiniteQueryResult<
-    {
-      pages: {
-        data: DBThread[];
-        cursor: string;
-      }[];
-      pageParams: (string | null | undefined)[];
-    },
-    TRPCClientErrorLike<{
-      input: {
-        maxResults: number;
-        cursor?: string | null | undefined;
-        q?: string | null | undefined;
-      };
-      output: {
-        data: DBThread[];
-        cursor: string;
-      };
-      transformer: true;
-      errorShape: {};
-    }>
-  >;
-
 // Step 1: Create a Context
 const ThreadContext = createContext<
   | {
-      query: queryType;
       activeThread: DBThread;
       setActiveThread: Dispatch<SetStateAction<DBThread>>;
     }
@@ -53,20 +28,9 @@ export const ThreadProvider = ({ children }: { children: ReactNode }) => {
     messages: [],
     snippet: "",
   });
-  const query = api.email.getThreadsPaginated.useInfiniteQuery(
-    {
-      maxResults: 50,
-    },
-    {
-      getNextPageParam: (lastPage) => {
-        if (lastPage.data.length < 50) return undefined;
-        return lastPage.cursor;
-      },
-    },
-  );
   return (
     // @ts-ignore
-    <ThreadContext.Provider value={{ query, activeThread, setActiveThread }}>
+    <ThreadContext.Provider value={{ activeThread, setActiveThread }}>
       {children}
     </ThreadContext.Provider>
   );

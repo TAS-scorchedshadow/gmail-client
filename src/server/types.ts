@@ -9,6 +9,7 @@ export type DBMessage = {
   headers: { key: string; line: string }[];
   subject: string;
   snippet: string;
+  text: string;
   date: Date;
   to: DBAddress[];
   from: DBAddress[];
