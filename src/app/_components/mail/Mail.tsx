@@ -15,17 +15,17 @@ import {
   Users2,
 } from "lucide-react";
 import { TooltipProvider } from "~/components/ui/tooltip";
-import { AccountSwitcher } from "./account-switcher";
+import { AccountSwitcher } from "./AccountSwitcher";
 import { Separator } from "~/components/ui/separator";
-import { Nav } from "./nav";
+import { Nav } from "./Nav";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "~/components/ui/resizable";
 import { cn } from "~/lib/utils";
-import { MailDisplay } from "./mail-display";
-import { MailList } from "./mail-list";
+import { MailDisplay } from "./MailDisplay";
+import { MailList } from "./MailList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Input } from "~/components/ui/input";
 import type { Mail } from "./data";

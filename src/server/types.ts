@@ -24,5 +24,4 @@ export type DBMessage = {
 export type DBThread = {
   id: string;
   messages: DBMessage[];
-  snippet: string;
 };

@@ -1,6 +1,6 @@
 import { Button } from "~/components/ui/button";
 import { accounts, mails } from "./data";
-import { Mail } from "./mail";
+import { Mail } from "./Mail";
 import { api } from "~/trpc/react";
 
 export default function MailPage() {

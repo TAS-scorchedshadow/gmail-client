@@ -119,6 +119,7 @@ export function MailList({ search }: { search: string }) {
                     "Nothing more to load"
                   )
                 ) : (
+                  // @ts-expect-error -- Need to resolve JSON auto parse error
                   <ThreadPreview thread={thread} />
                 )}
               </div>

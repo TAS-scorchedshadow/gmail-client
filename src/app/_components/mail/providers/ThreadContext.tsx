@@ -26,7 +26,6 @@ export const ThreadProvider = ({ children }: { children: ReactNode }) => {
   const [activeThread, setActiveThread] = useState<DBThread>({
     id: "default",
     messages: [],
-    snippet: "",
   });
   return (
     // @ts-ignore
