@@ -137,11 +137,15 @@ async function addMessages(
         return false;
       }
       //TODO: Implement the minimal update
-      await db.message.findFirst({
+      const first = await db.message.findFirst({
         where: {
           id: message.id,
         },
       });
+
+      if (first == null) {
+        return false;
+      }
 
       // For now always do the full update
       const queriedMessage = await getMessage(gmail, message.id, "raw");
@@ -427,10 +431,15 @@ export const emailRouter = createTRPCRouter({
         },
       },
     });
+    console.warn(
+      "Found users",
+      users.map((u) => u.email),
+    );
     for (const user of users) {
       const googleAccount = user.accounts[0];
 
       if (!googleAccount) {
+        console.warn("Google account was not found", user.email);
         return;
       }
 
@@ -439,9 +448,11 @@ export const emailRouter = createTRPCRouter({
         googleAccount.expires_at * 1000 < Date.now()
       ) {
         // Token is invalid return
+        console.warn("Token has expired", user.email);
         return;
       }
       await backFillUpdates(ctx.db, googleAccount.access_token, user.id);
+      console.warn("Successfully awaited", user.email);
     }
   }),
 
@@ -455,10 +466,15 @@ export const emailRouter = createTRPCRouter({
         },
       },
     });
+    console.warn(
+      "Found users",
+      users.map((u) => u.email),
+    );
     for (const user of users) {
       const googleAccount = user.accounts[0];
 
       if (!googleAccount) {
+        console.warn("Google account was not found", user.email);
         return;
       }
 
@@ -467,9 +483,12 @@ export const emailRouter = createTRPCRouter({
         googleAccount.expires_at * 1000 < Date.now()
       ) {
         // Token is invalid return
+        console.warn("Token has expired", user.email);
         return;
       }
+
       await syncedHistory(ctx.db, googleAccount.access_token, user.id);
+      console.warn("Successfully awaited", user.email);
     }
   }),
 });
