@@ -101,6 +101,7 @@ async function addMessages(
   userId: string,
   messages: gmail_v1.Schema$Message[],
 ) {
+  // console.log("messages", messages);
   if (messages.length === 0) {
     return;
   }
@@ -127,7 +128,7 @@ async function addMessages(
   });
   await db.$transaction(threads);
 
-  const parsedMessages = await Promise.all(
+  const parsedMessages = await Promise.allSettled(
     messages.map(async (message) => {
       // Check the db cache if exists we should do the minimal update
       if (!message.id || !message.threadId || !message) {
@@ -137,15 +138,11 @@ async function addMessages(
         return false;
       }
       //TODO: Implement the minimal update
-      const first = await db.message.findFirst({
+      await db.message.findFirst({
         where: {
           id: message.id,
         },
       });
-
-      if (first == null) {
-        return false;
-      }
 
       // For now always do the full update
       const queriedMessage = await getMessage(gmail, message.id, "raw");
@@ -209,7 +206,11 @@ async function addMessages(
       return toInsert;
     }),
   );
-  const insert = parsedMessages.filter((x) => x) as DBMessage[];
+
+  const middle = parsedMessages
+    .filter((x) => x.status === "fulfilled")
+    .map((x) => x.value);
+  const insert = middle.filter((x) => x) as DBMessage[];
 
   const operations = insert.map((messageL) => {
     return db.message.upsert({
@@ -544,7 +545,7 @@ async function syncedHistory(
       }
     });
     await addMessages(db, gmail, userId, messagesToAdd);
-    await deleteMessages(db, messagesToRemove);
+    // await deleteMessages(db, messagesToRemove);
 
     // Update to the last historyId
     // TODO: Handle when more than 300 updates occur
@@ -569,7 +570,6 @@ async function syncedHistory(
         nextPageToken: null,
       },
     });
-    console.log("No history found.");
     return resp;
   }
 }
@@ -592,7 +592,6 @@ async function backFillUpdates(
   }
 
   const nextPageToken = user.nextPageToken ?? undefined;
-  console.log("===============" + user.nextPageToken);
 
   const res = await gmail.users.messages.list({
     userId: "me",
@@ -639,6 +638,8 @@ async function backFillUpdates(
         res.data.nextPageToken !== undefined && res.data.nextPageToken !== null,
     },
   });
+  console.log("========old=======" + user.nextPageToken);
+  console.log("========new=======" + res.data.nextPageToken);
 
   await addMessages(db, gmail, userId, messages);
 

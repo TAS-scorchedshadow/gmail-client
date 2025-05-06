@@ -2,7 +2,7 @@ export function isPresignedUrlExpired(presignedUrl: string): boolean {
   try {
     const url = new URL(presignedUrl);
 
-    const expiresParam = url.searchParams.get("X-Amz-Expires");
+    const expiresParam = url.searchParams.get("X-Amz-Date");
 
     if (!expiresParam) {
       console.warn(
@@ -11,15 +11,16 @@ export function isPresignedUrlExpired(presignedUrl: string): boolean {
       return true; // Or handle as an error
     }
 
-    const expirationTimestamp = parseInt(expiresParam, 10);
-    if (isNaN(expirationTimestamp)) {
-      console.error("Invalid 'X-Amz-Expires' parameter in URL.");
-      return true; // Or handle as an error
-    }
+    const expirationTimestamp = new Date(
+      expiresParam.replace(
+        /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/,
+        "$1-$2-$3T$4:$5:$6Z",
+      ),
+    );
 
-    const currentTimestamp = Math.floor(Date.now() / 1000); // Current time in seconds
+    const currentTimestamp = new Date(); // Current time in seconds
 
-    return currentTimestamp >= expirationTimestamp;
+    return expirationTimestamp > currentTimestamp;
   } catch (error) {
     console.error("Error parsing URL:", error);
     return true; // Handle invalid URL format
