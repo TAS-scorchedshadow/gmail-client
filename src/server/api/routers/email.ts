@@ -513,7 +513,7 @@ async function syncedHistory(
   try {
     const res = await gmail.users.history.list({
       userId: "me",
-      maxResults: 500,
+      maxResults: 300,
       startHistoryId: lastHistory,
     });
 
@@ -544,7 +544,7 @@ async function syncedHistory(
     await deleteMessages(db, messagesToRemove);
 
     // Update to the last historyId
-    // TODO: Handle when more than 500 updates occur
+    // TODO: Handle when more than 300 updates occur
     await db.user.update({
       where: {
         id: userId,
