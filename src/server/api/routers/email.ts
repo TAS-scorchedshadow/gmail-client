@@ -379,7 +379,6 @@ export const emailRouter = createTRPCRouter({
         // @ts-expect-error - JSON coersion not implemented
         res.map(async (thread) => await refreshThread(thread, ctx.db)),
       );
-      console.log(threads);
       return { data: threads, cursor: last.id };
     }),
 
