@@ -1,12 +1,8 @@
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
 import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
-import type { Mail } from "../data";
-import { format } from "date-fns/format";
-import type { gmail_v1 } from "googleapis/build/src/apis/gmail/v1";
 import elipseSubstring from "~/app/utils/substring";
 import Message from "./Message";
 import { ScrollArea } from "~/components/ui/scroll-area";
@@ -21,17 +17,16 @@ export default function Thread({ thread }: { thread: DBThread }) {
   const _sender =
     headers?.find((h) => h.key === "From")?.line?.split("<")[0] ?? "Unknown";
   const sender = elipseSubstring(_sender, 40);
-  const subject = headers?.find((h) => h.key === "Subject")?.line ?? "Unknown";
-  const date = headers?.find((h) => h.line === "Date")?.line;
+  // const subject = headers?.find((h) => h.key === "Subject")?.line ?? "Unknown";
+  // const date = headers?.find((h) => h.line === "Date")?.line;
   console.log(thread);
 
   return (
     <div className="flex flex-1 flex-col">
       <ScrollArea className="h-full max-h-screen overflow-y-auto">
-        {messages &&
-          messages.map((message) => (
-            <Message key={message.id} message={message} />
-          ))}
+        {messages?.map((message) => (
+          <Message key={message.id} message={message} />
+        ))}
         <Separator className="mt-auto" />
         <div className="p-4">
           <form>

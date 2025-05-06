@@ -1,15 +1,5 @@
-import {
-  useState,
-  type ComponentProps,
-  type SetStateAction,
-  type Dispatch,
-} from "react";
 import { cn } from "~/lib/utils";
-import { mails } from "../data";
-import type { gmail_v1 } from "googleapis/build/src/apis/gmail/v1";
-import { api } from "~/trpc/react";
 import elipseSubstring from "~/app/utils/substring";
-import { Badge } from "~/components/ui/badge";
 import { formatDistanceToNow } from "date-fns/formatDistanceToNow";
 import { useSafeContext } from "../providers/useSafeContext";
 import { ThreadContext } from "../providers/ThreadContext";
@@ -99,16 +89,16 @@ export default function ThreadPreview({ thread }: { thread: DBThread }) {
   );
 }
 
-function getBadgeVariantFromLabel(
-  label: string,
-): ComponentProps<typeof Badge>["variant"] {
-  if (["work"].includes(label.toLowerCase())) {
-    return "default";
-  }
+// function getBadgeVariantFromLabel(
+//   label: string,
+// ): ComponentProps<typeof Badge>["variant"] {
+//   if (["work"].includes(label.toLowerCase())) {
+//     return "default";
+//   }
 
-  if (["personal"].includes(label.toLowerCase())) {
-    return "outline";
-  }
+//   if (["personal"].includes(label.toLowerCase())) {
+//     return "outline";
+//   }
 
-  return "secondary";
-}
+//   return "secondary";
+// }

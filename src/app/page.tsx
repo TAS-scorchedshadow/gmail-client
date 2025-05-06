@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { auth } from "~/server/auth";
-import { api, HydrateClient } from "~/trpc/server";
 import EmailTest from "./_components/EmailTest";
 import { redirect } from "next/navigation";
 

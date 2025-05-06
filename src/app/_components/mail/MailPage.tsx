@@ -4,8 +4,8 @@ import { Mail } from "./Mail";
 import { api } from "~/trpc/react";
 
 export default function MailPage() {
-  const defaultLayout = "react-resizable-panels:layout:mail";
-  const defaultCollapsed = "react-resizable-panels:collapsed";
+  // const defaultLayout = "react-resizable-panels:layout:mail";
+  // const defaultCollapsed = "react-resizable-panels:collapsed";
   const mut = api.email.backFillUpdates.useMutation({});
   const mutSync = api.email.syncedFromHistory.useMutation({});
 

@@ -1,4 +1,4 @@
-import { gmail_v1, google } from "googleapis";
+import { type gmail_v1, google } from "googleapis";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
@@ -12,9 +12,8 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { type DBAddress, type DBMessage, type DBThread } from "~/server/types";
+import { type DBAddress, type DBMessage } from "~/server/types";
 import { assert } from "console";
-import { db } from "~/server/db";
 
 function getGmailClient(access_token: string | null) {
   if (!access_token) {
@@ -27,20 +26,6 @@ function getGmailClient(access_token: string | null) {
   auth.setCredentials({ access_token: access_token });
   return google.gmail({ version: "v1", auth });
 }
-
-async function getThread(gmailClient: gmail_v1.Gmail, threadId: string) {
-  try {
-    const res = await gmailClient.users.threads.get({
-      userId: "me",
-      id: threadId,
-    });
-    return res.data;
-  } catch (err) {
-    console.log("Ohhhh nooo!");
-    console.log(err);
-  }
-}
-
 async function getMessage(
   gmailClient: gmail_v1.Gmail,
   messageId: string,
@@ -84,10 +69,10 @@ async function getFromS3Bucket(key: string) {
       }),
     );
     return res;
-  } catch (error) {
+  } catch {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
-      message: `Failed to get HTML from bucket - key:${key}`,
+      message: `Failed to get HTML from bucket - key:${key}}`,
     });
   }
 }
@@ -101,7 +86,7 @@ async function getSignedUrlS3(key: string) {
       expiresIn: 60 * 60 * 24,
     });
     return signedUrl;
-  } catch (error) {
+  } catch {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
       message: `Failed to get HTML from bucket - key:${key}`,
@@ -123,8 +108,7 @@ async function addMessages(
     ...new Set(
       messages
         .map((message) => message.threadId)
-        .filter((id) => id !== undefined && id !== null)
-        .map((id) => id!),
+        .filter((id) => id !== undefined && id !== null),
     ),
   ];
 
@@ -151,7 +135,8 @@ async function addMessages(
         );
         return false;
       }
-      const dbMessage = await db.message.findFirst({
+      //TODO: Implement the minimal update
+      await db.message.findFirst({
         where: {
           id: message.id,
         },
@@ -266,137 +251,6 @@ async function deleteMessages(
   return await db.$transaction(operations);
 }
 
-async function updateThread(
-  db: PrismaClient,
-  gmail: gmail_v1.Gmail,
-  userId: string,
-  threadId: string,
-) {
-  const threadsResp = await gmail.users.threads.get({
-    userId: "me",
-    format: "minimal",
-    id: threadId,
-  });
-  if (!threadsResp) {
-    throw new TRPCError({ code: "NOT_FOUND" });
-  }
-
-  const thread2 = threadsResp.data;
-  if (!thread2.id) {
-    return false;
-  }
-
-  let dbThread = await db.thread.upsert({
-    where: {
-      id: thread2.id,
-    },
-    create: {
-      id: thread2.id,
-      userId: userId,
-    },
-    update: {
-      userId: userId,
-    },
-  });
-
-  const parsedMessages = await Promise.all(
-    thread2.messages!.map(async ({ id }) => {
-      if (!id) {
-        return false;
-      }
-
-      const message = await getMessage(gmail, id, "raw");
-
-      const data = message.data;
-      if (!data.id || !data.raw) {
-        return false;
-      }
-
-      const rawContent = Buffer.from(data.raw, "base64").toString("utf-8");
-      const parsed: ParsedMail = await simpleParser(rawContent);
-      if (!parsed.html) {
-        return false;
-      }
-
-      await putS3Bucket(`message-${id}`, parsed.html);
-      const link = await getSignedUrlS3(`message-${id}`);
-
-      if (!parsed.subject || !parsed.from || !parsed.date || !parsed.to) {
-        return false;
-      }
-
-      function parseAddress(address: AddressObject): DBAddress[] {
-        return address.value.map((val) => {
-          return {
-            name: val.name,
-            email: val.address,
-          };
-        });
-      }
-
-      function parseAddressMany(
-        addresses: AddressObject[] | AddressObject,
-      ): DBAddress[] {
-        if (!Array.isArray(addresses)) {
-          addresses = [addresses];
-        }
-        const rtn: DBAddress[] = [];
-        addresses.forEach((address) => {
-          rtn.push(...parseAddress(address));
-        });
-        return rtn;
-      }
-
-      const toInsert: DBMessage = {
-        id: data.id,
-        s3Link: link,
-        headers: [...parsed.headerLines],
-        subject: parsed.subject.toString(),
-        date: parsed.date,
-        to: parseAddressMany(parsed.to),
-        from: parseAddress(parsed.from),
-        cc: parsed.cc ? parseAddressMany(parsed.cc) : [],
-        bcc: parsed.bcc ? parseAddressMany(parsed.bcc) : [],
-        replyTo: parsed.replyTo ? parseAddress(parsed.replyTo) : [],
-        inReplyTo: parsed.inReplyTo?.toString(),
-        threadId: dbThread.id,
-        text: parsed.text ? parsed.text.toString() : "",
-        snippet: (message.data.snippet ?? "").toString(),
-      };
-
-      return toInsert;
-    }),
-  );
-
-  // Remove failed parses
-  const messages = parsedMessages.filter((x) => x) as DBMessage[];
-
-  const operations = messages.map((message) => {
-    return db.message.upsert({
-      where: {
-        id: message.id,
-      },
-      create: { ...message },
-      update: {
-        s3Link: message.s3Link,
-        headers: message.headers,
-        subject: message.subject,
-        date: message.date,
-        to: message.to,
-        from: message.from,
-        cc: message.cc,
-        bcc: message.bcc,
-        replyTo: message.replyTo,
-        inReplyTo: message.inReplyTo,
-        snippet: message.snippet,
-        text: message.text,
-      },
-    });
-  });
-  await db.$transaction(operations);
-
-  return true;
-}
 export const emailRouter = createTRPCRouter({
   // Example query
   getEmails: protectedProcedure.query(async ({ ctx }) => {
@@ -432,7 +286,7 @@ export const emailRouter = createTRPCRouter({
         body: z.string(),
       }),
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       const res = putS3Bucket(input.key, input.body);
       return res;
     }),
@@ -443,7 +297,7 @@ export const emailRouter = createTRPCRouter({
         key: z.string(),
       }),
     )
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       const res = await getFromS3Bucket(input.key);
       if (!res.Body) {
         throw new TRPCError({
@@ -560,54 +414,6 @@ export const emailRouter = createTRPCRouter({
       return res;
     }),
 
-  pullUpdates: protectedProcedure.mutation(async ({ ctx }) => {
-    const gmail = getGmailClient(ctx.session.accessToken);
-
-    let nextPageToken: string | undefined = undefined;
-
-    const res = await gmail.users.threads.list({
-      userId: "me",
-      maxResults: 300, // Max allowed by gmail api
-    });
-    if (!res.data) {
-      assert("This should not happen");
-    }
-
-    const threads = res.data.threads;
-    if (!threads || threads.length === 0) {
-      console.log("No threads found.");
-      return;
-    }
-
-    const threadResp = await Promise.all(
-      threads.map(async ({ id }) => {
-        if (!id) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Gmail thread list returned a thread with a missing id",
-          });
-        }
-
-        return getThread(gmail, id);
-      }),
-    );
-    if (!threadResp || threadResp.length === 0) {
-      console.log("No threads found.");
-      return;
-    }
-
-    const finished = await Promise.all(
-      threadResp.map((thread) => {
-        if (!thread || !thread.id) {
-          console.log("error", thread);
-          return false;
-        }
-        updateThread(ctx.db, gmail, ctx.session.user.id, thread.id);
-      }),
-    );
-    return finished;
-  }),
-
   // Doesn't guarantee sync after a single call, processes 500 messages at a time updates lastHistoryId in the database
   // May have an issue when more than 500 updates happen between jobs.
   syncedFromHistory: protectedProcedure.mutation(async ({ ctx }) => {
@@ -670,7 +476,7 @@ export const emailRouter = createTRPCRouter({
         },
       });
     } catch (err) {
-      console.log("Handling Error");
+      console.log("Handling Error ", err);
       // Invalid start historyId restart full sync
       const resp = await ctx.db.user.update({
         where: {
@@ -683,7 +489,7 @@ export const emailRouter = createTRPCRouter({
         },
       });
       console.log("No history found.");
-      return;
+      return resp;
     }
   }),
 
@@ -709,7 +515,7 @@ export const emailRouter = createTRPCRouter({
       maxResults: 10,
       pageToken: nextPageToken,
     });
-    if (!res.data || !res.data.messages) {
+    if (!res.data?.messages) {
       assert("This should not happen");
     }
 
@@ -718,23 +524,28 @@ export const emailRouter = createTRPCRouter({
       console.log("No messages found.");
       return;
     }
+    const message = messages[0];
 
     console.log("==========", user.lastHistoryId);
+
     if (user.lastHistoryId === undefined || user.lastHistoryId === null) {
-      const firstMessage = await getMessage(gmail, messages[0]?.id!, "minimal");
-      const history = firstMessage.data.historyId;
-      console.log("==== set history =====", history);
-      await ctx.db.user.update({
-        where: {
-          id: ctx.session.user.id,
-        },
-        data: {
-          lastHistoryId: history,
-        },
-      });
+      //TODO: Inspect if not setting the history is the correct behaviour
+      if (message?.id) {
+        const firstMessage = await getMessage(gmail, message.id, "minimal");
+        const history = firstMessage.data.historyId;
+        console.log("==== set history =====", history);
+        await ctx.db.user.update({
+          where: {
+            id: ctx.session.user.id,
+          },
+          data: {
+            lastHistoryId: history,
+          },
+        });
+      }
     }
 
-    const wait = await ctx.db.user.update({
+    await ctx.db.user.update({
       where: {
         id: ctx.session.user.id,
       },

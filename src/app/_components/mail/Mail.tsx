@@ -29,7 +29,6 @@ import { MailList } from "./MailList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Input } from "~/components/ui/input";
 import type { Mail } from "./data";
-import { useState } from "react";
 import { ThreadProvider } from "./providers/ThreadContext";
 
 interface MailProps {
@@ -46,7 +45,6 @@ interface MailProps {
 
 export function Mail({
   accounts,
-  mails,
   defaultLayout = [20, 32, 48],
   defaultCollapsed = false,
   navCollapsedSize,
@@ -55,16 +53,6 @@ export function Mail({
 
   const [search, setSearch] = React.useState("");
 
-  const mail_temp: Mail = {
-    id: "1",
-    subject: "Hello",
-    name: "John Doe",
-    date: new Date().toDateString(),
-    email: "redman29h@gmail.coppm",
-    text: "asijdoaisjdoiasjdoisa",
-    read: true,
-    labels: [],
-  };
   return (
     <ThreadProvider>
       <TooltipProvider delayDuration={0}>

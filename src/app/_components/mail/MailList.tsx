@@ -1,6 +1,3 @@
-import { Badge } from "~/components/ui/badge";
-import { ScrollArea } from "~/components/ui/scroll-area";
-import { formatDistanceToNow } from "date-fns/formatDistanceToNow";
 import { useRef, useCallback, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -55,7 +52,7 @@ export function MailList({ search }: { search: string }) {
           hasNextPage
         ) {
           console.log("Fetching More");
-          fetchNextPage();
+          void fetchNextPage();
         }
       }
     },

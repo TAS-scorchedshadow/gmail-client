@@ -1,5 +1,4 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { access } from "fs";
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
@@ -79,6 +78,8 @@ export const authConfig = {
             }),
           });
 
+          // TODO: Resolve this type error
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const tokensOrError = await response.json();
 
           if (!response.ok) throw tokensOrError;

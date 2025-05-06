@@ -1,14 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Button } from "~/components/ui/button";
-import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
-import { Switch } from "~/components/ui/switch";
-import { Textarea } from "~/components/ui/textarea";
-import type { Mail } from "../data";
 import { format } from "date-fns/format";
-import type { gmail_v1 } from "googleapis/build/src/apis/gmail/v1";
 import elipseSubstring from "~/app/utils/substring";
-import { api } from "~/trpc/react";
 import { useEffect, useState } from "react";
 import DOMPurify from "dompurify";
 import type { DBMessage } from "~/server/types";

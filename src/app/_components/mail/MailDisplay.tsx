@@ -13,7 +13,6 @@ import {
   ReplyAll,
   Trash2,
 } from "lucide-react";
-import type { Mail } from "./data";
 import {
   Tooltip,
   TooltipContent,
@@ -33,7 +32,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import { api } from "~/trpc/react";
 import Thread from "./mail /Thread";
 import { useSafeContext } from "./providers/useSafeContext";
 import { ThreadContext } from "./providers/ThreadContext";
