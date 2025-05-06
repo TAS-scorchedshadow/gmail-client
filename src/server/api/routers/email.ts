@@ -512,7 +512,7 @@ export const emailRouter = createTRPCRouter({
 
     const res = await gmail.users.messages.list({
       userId: "me",
-      maxResults: 10,
+      maxResults: 500,
       pageToken: nextPageToken,
     });
     if (!res.data?.messages) {
