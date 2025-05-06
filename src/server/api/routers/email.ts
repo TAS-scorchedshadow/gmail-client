@@ -3,7 +3,7 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
-import { simpleParser, type ParsedMail, type AddressObject } from "mailparser";
+import { simpleParser, type ParsedMail } from "mailparser";
 import {
   S3Client,
   PutObjectCommand,
@@ -12,9 +12,10 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { type DBAddress, type DBMessage, type DBThread } from "~/server/types";
+import { type DBMessage, type DBThread } from "~/server/types";
 import { assert } from "console";
 import { isPresignedUrlExpired } from "../utils/s3refresh";
+import { parseAddress, parseAddressMany } from "../utils/address";
 
 function getGmailClient(access_token: string | null) {
   if (!access_token) {
@@ -163,28 +164,6 @@ async function addMessages(
 
       if (!parsed.subject || !parsed.from || !parsed.date || !parsed.to) {
         return false;
-      }
-
-      function parseAddress(address: AddressObject): DBAddress[] {
-        return address.value.map((val) => {
-          return {
-            name: val.name,
-            email: val.address,
-          };
-        });
-      }
-
-      function parseAddressMany(
-        addresses: AddressObject[] | AddressObject,
-      ): DBAddress[] {
-        if (!Array.isArray(addresses)) {
-          addresses = [addresses];
-        }
-        const rtn: DBAddress[] = [];
-        addresses.forEach((address) => {
-          rtn.push(...parseAddress(address));
-        });
-        return rtn;
       }
 
       const toInsert: DBMessage = {
@@ -432,15 +411,15 @@ export const emailRouter = createTRPCRouter({
         },
       },
     });
-    console.warn(
-      "Found users",
-      users.map((u) => u.email),
-    );
+    // console.warn(
+    //   "Found users",
+    //   users.map((u) => u.email),
+    // );
     for (const user of users) {
       const googleAccount = user.accounts[0];
 
       if (!googleAccount) {
-        console.warn("Google account was not found", user.email);
+        // console.warn("Google account was not found", user.email);
         continue;
       }
 
@@ -449,11 +428,11 @@ export const emailRouter = createTRPCRouter({
         googleAccount.expires_at * 1000 < Date.now()
       ) {
         // Token is invalid return
-        console.warn("Token has expired", user.email);
+        // console.warn("Token has expired", user.email);
         continue;
       }
       await backFillUpdates(ctx.db, googleAccount.access_token, user.id);
-      console.warn("Successfully awaited", user.email);
+      // console.warn("Successfully awaited", user.email);
     }
   }),
 
@@ -467,15 +446,15 @@ export const emailRouter = createTRPCRouter({
         },
       },
     });
-    console.warn(
-      "Found users",
-      users.map((u) => u.email),
-    );
+    // console.warn(
+    //   "Found users",
+    //   users.map((u) => u.email),
+    // );
     for (const user of users) {
       const googleAccount = user.accounts[0];
 
       if (!googleAccount) {
-        console.warn("Google account was not found", user.email);
+        // console.warn("Google account was not found", user.email);
         continue;
       }
 
@@ -484,12 +463,12 @@ export const emailRouter = createTRPCRouter({
         googleAccount.expires_at * 1000 < Date.now()
       ) {
         // Token is invalid return
-        console.warn("Token has expired", user.email);
+        // console.warn("Token has expired", user.email);
         continue;
       }
 
       await syncedHistory(ctx.db, googleAccount.access_token, user.id);
-      console.warn("Successfully awaited", user.email);
+      // console.warn("Successfully awaited", user.email);
     }
   }),
 });
