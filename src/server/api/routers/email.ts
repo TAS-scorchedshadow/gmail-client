@@ -218,51 +218,27 @@ async function addMessages(
   return true;
 }
 
-async function deleteMessages(
-  db: PrismaClient,
-  messages: gmail_v1.Schema$Message[],
-) {
-  if (messages.length === 0) {
-    return;
-  }
+// TODO: Uncomment when the concurrent delete is fixed
+// async function deleteMessages(
+//   db: PrismaClient,
+//   messages: gmail_v1.Schema$Message[],
+// ) {
+//   if (messages.length === 0) {
+//     return;
+//   }
 
-  const operations = messages.map((message) => {
-    return db.message.delete({
-      where: {
-        id: message.id ?? "",
-      },
-    });
-  });
-  return await db.$transaction(operations);
-}
+//   const operations = messages.map((message) => {
+//     return db.message.delete({
+//       where: {
+//         id: message.id ?? "",
+//       },
+//     });
+//   });
+//   return await db.$transaction(operations);
+// }
 
 export const emailRouter = createTRPCRouter({
   // Example query
-  getEmails: protectedProcedure.query(async ({ ctx }) => {
-    const gmail = getGmailClient(ctx.session.accessToken);
-    const res = await gmail.users.messages.list({
-      userId: "me",
-      maxResults: 100,
-    });
-
-    const messages = res.data.messages;
-
-    if (!messages || messages.length === 0) {
-      console.log("No messages found.");
-      return;
-    }
-
-    console.log("Messages:");
-    for (const message of messages) {
-      // You'll need to fetch individual message details to get headers, body, etc.
-      const messageDetails = await gmail.users.messages.get({
-        userId: "me",
-        id: message.id!,
-      });
-      console.log(`- ${messageDetails.data.snippet}`); // Example: log the message snippet
-    }
-    return res.data.messages;
-  }),
 
   putS3Bucket: protectedProcedure
     .input(
@@ -291,25 +267,6 @@ export const emailRouter = createTRPCRouter({
         });
       }
       return res.Body;
-    }),
-
-  getThreadsPaginatedGmail: protectedProcedure
-    .input(
-      z.object({
-        maxResults: z.number(),
-        cursor: z.string().nullish(),
-        q: z.string().nullish(),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const gmail = getGmailClient(ctx.session.accessToken);
-      const res = await gmail.users.threads.list({
-        userId: "me",
-        maxResults: input.maxResults,
-        pageToken: (input.cursor ??= undefined),
-        q: (input.q ??= undefined),
-      });
-      return { data: res.data, cursor: res.data.nextPageToken };
     }),
 
   getThreadsPaginated: protectedProcedure
@@ -359,27 +316,15 @@ export const emailRouter = createTRPCRouter({
         return { data: [], cursor: undefined };
       }
       const last = res[res.length - 1]!;
-      const threads = await Promise.all(
-        // @ts-expect-error - JSON coersion not implemented
-        res.map(async (thread) => await refreshThread(thread, ctx.db)),
-      );
+      const threads = (
+        await Promise.allSettled(
+          // @ts-expect-error - JSON coersion not implemented
+          res.map(async (thread) => await refreshThread(thread, ctx.db)),
+        )
+      )
+        .filter((threadPromise) => threadPromise.status === "fulfilled")
+        .map((x) => x.value);
       return { data: threads, cursor: last.id };
-    }),
-
-  getThread: protectedProcedure
-    .input(
-      z.object({
-        threadId: z.string(),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const gmail = getGmailClient(ctx.session.accessToken);
-      const res = gmail.users.threads.get({
-        userId: "me",
-        format: "metadata",
-        id: input.threadId,
-      });
-      return res;
     }),
 
   // Doesn't guarantee sync after a single call, processes 500 messages at a time updates lastHistoryId in the database
