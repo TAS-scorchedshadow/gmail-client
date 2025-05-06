@@ -440,7 +440,7 @@ export const emailRouter = createTRPCRouter({
 
       if (!googleAccount) {
         console.warn("Google account was not found", user.email);
-        return;
+        continue;
       }
 
       if (
@@ -449,7 +449,7 @@ export const emailRouter = createTRPCRouter({
       ) {
         // Token is invalid return
         console.warn("Token has expired", user.email);
-        return;
+        continue;
       }
       await backFillUpdates(ctx.db, googleAccount.access_token, user.id);
       console.warn("Successfully awaited", user.email);
@@ -475,7 +475,7 @@ export const emailRouter = createTRPCRouter({
 
       if (!googleAccount) {
         console.warn("Google account was not found", user.email);
-        return;
+        continue;
       }
 
       if (
@@ -484,7 +484,7 @@ export const emailRouter = createTRPCRouter({
       ) {
         // Token is invalid return
         console.warn("Token has expired", user.email);
-        return;
+        continue;
       }
 
       await syncedHistory(ctx.db, googleAccount.access_token, user.id);
