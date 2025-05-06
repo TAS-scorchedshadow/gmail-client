@@ -1,5 +1,5 @@
 import { type gmail_v1, google } from "googleapis";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
@@ -417,148 +417,227 @@ export const emailRouter = createTRPCRouter({
   // Doesn't guarantee sync after a single call, processes 500 messages at a time updates lastHistoryId in the database
   // May have an issue when more than 500 updates happen between jobs.
   syncedFromHistory: protectedProcedure.mutation(async ({ ctx }) => {
-    const gmail = getGmailClient(ctx.session.accessToken);
-
-    const user = await ctx.db.user.findFirst({
-      where: {
-        id: ctx.session.user.id,
-      },
-    });
-
-    if (!user) {
-      return;
-    }
-
-    const lastHistory = user.lastHistoryId ?? undefined;
-
-    console.log("============" + lastHistory);
-    try {
-      const res = await gmail.users.history.list({
-        userId: "me",
-        maxResults: 500,
-        startHistoryId: lastHistory,
-      });
-
-      if (!res.data.history) {
-        // No updates
-        return;
-      }
-      const messagesToAdd: gmail_v1.Schema$Message[] = [];
-      const messagesToRemove: gmail_v1.Schema$Message[] = [];
-      res.data.history.forEach((history) => {
-        if (history.messagesAdded) {
-          history.messagesAdded.forEach((messageAdded) => {
-            if (messageAdded.message) {
-              messagesToAdd.push(messageAdded.message);
-            }
-          });
-        }
-
-        if (history.messagesDeleted) {
-          history.messagesDeleted.forEach((messageDeleted) => {
-            if (messageDeleted.message) {
-              messagesToRemove.push(messageDeleted.message);
-            }
-          });
-        }
-      });
-      await addMessages(ctx.db, gmail, ctx.session.user.id, messagesToAdd);
-      await deleteMessages(ctx.db, messagesToRemove);
-
-      // Update to the last historyId
-      // TODO: Handle when more than 500 updates occur
-      await ctx.db.user.update({
-        where: {
-          id: ctx.session.user.id,
-        },
-        data: {
-          lastHistoryId: res.data.historyId,
-        },
-      });
-    } catch (err) {
-      console.log("Handling Error ", err);
-      // Invalid start historyId restart full sync
-      const resp = await ctx.db.user.update({
-        where: {
-          id: ctx.session.user.id,
-        },
-        data: {
-          lastHistoryId: null,
-          isSynced: false,
-          nextPageToken: null,
-        },
-      });
-      console.log("No history found.");
-      return resp;
-    }
+    return await syncedHistory(
+      ctx.db,
+      ctx.session.accessToken,
+      ctx.session.user.id,
+    );
   }),
 
   // Used for full sync, each iteration should sync X messages
   backFillUpdates: protectedProcedure.mutation(async ({ ctx }) => {
-    const gmail = getGmailClient(ctx.session.accessToken);
+    return await backFillUpdates(
+      ctx.db,
+      ctx.session.accessToken,
+      ctx.session.user.id,
+    );
+  }),
 
-    const user = await ctx.db.user.findFirst({
-      where: {
-        id: ctx.session.user.id,
-      },
-    });
-
-    if (!user) {
-      return;
-    }
-
-    const nextPageToken = user.nextPageToken ?? undefined;
-    console.log("===============" + user.nextPageToken);
-
-    const res = await gmail.users.messages.list({
-      userId: "me",
-      maxResults: 500,
-      pageToken: nextPageToken,
-    });
-    if (!res.data?.messages) {
-      assert("This should not happen");
-    }
-
-    const messages = res.data.messages;
-    if (!messages || messages.length === 0) {
-      console.log("No messages found.");
-      return;
-    }
-    const message = messages[0];
-
-    console.log("==========", user.lastHistoryId);
-
-    if (user.lastHistoryId === undefined || user.lastHistoryId === null) {
-      //TODO: Inspect if not setting the history is the correct behaviour
-      if (message?.id) {
-        const firstMessage = await getMessage(gmail, message.id, "minimal");
-        const history = firstMessage.data.historyId;
-        console.log("==== set history =====", history);
-        await ctx.db.user.update({
+  backFillUpdatesAllUsers: publicProcedure.mutation(async ({ ctx }) => {
+    const users = await ctx.db.user.findMany({
+      include: {
+        accounts: {
           where: {
-            id: ctx.session.user.id,
+            provider: "google",
           },
-          data: {
-            lastHistoryId: history,
-          },
-        });
-      }
-    }
-
-    await ctx.db.user.update({
-      where: {
-        id: ctx.session.user.id,
-      },
-      data: {
-        nextPageToken: res.data.nextPageToken,
-        isSynced:
-          res.data.nextPageToken !== undefined &&
-          res.data.nextPageToken !== null,
+        },
       },
     });
+    for (const user of users) {
+      const googleAccount = user.accounts[0];
 
-    await addMessages(ctx.db, gmail, ctx.session.user.id, messages);
+      if (!googleAccount) {
+        return;
+      }
 
-    return true;
+      if (
+        !googleAccount.expires_at ||
+        googleAccount.expires_at * 1000 < Date.now()
+      ) {
+        // Token is invalid return
+        return;
+      }
+      await backFillUpdates(ctx.db, googleAccount.access_token, user.id);
+    }
+  }),
+
+  syncedHistoryAllUsers: publicProcedure.mutation(async ({ ctx }) => {
+    const users = await ctx.db.user.findMany({
+      include: {
+        accounts: {
+          where: {
+            provider: "google",
+          },
+        },
+      },
+    });
+    for (const user of users) {
+      const googleAccount = user.accounts[0];
+
+      if (!googleAccount) {
+        return;
+      }
+
+      if (
+        !googleAccount.expires_at ||
+        googleAccount.expires_at * 1000 < Date.now()
+      ) {
+        // Token is invalid return
+        return;
+      }
+      await syncedHistory(ctx.db, googleAccount.access_token, user.id);
+    }
   }),
 });
+
+async function syncedHistory(
+  db: PrismaClient,
+  accessToken: string | null,
+  userId: string,
+) {
+  const gmail = getGmailClient(accessToken);
+
+  const user = await db.user.findFirst({
+    where: {
+      id: userId,
+    },
+  });
+
+  if (!user) {
+    return;
+  }
+
+  const lastHistory = user.lastHistoryId ?? undefined;
+
+  console.log("============" + lastHistory);
+  try {
+    const res = await gmail.users.history.list({
+      userId: "me",
+      maxResults: 500,
+      startHistoryId: lastHistory,
+    });
+
+    if (!res.data.history) {
+      // No updates
+      return;
+    }
+    const messagesToAdd: gmail_v1.Schema$Message[] = [];
+    const messagesToRemove: gmail_v1.Schema$Message[] = [];
+    res.data.history.forEach((history) => {
+      if (history.messagesAdded) {
+        history.messagesAdded.forEach((messageAdded) => {
+          if (messageAdded.message) {
+            messagesToAdd.push(messageAdded.message);
+          }
+        });
+      }
+
+      if (history.messagesDeleted) {
+        history.messagesDeleted.forEach((messageDeleted) => {
+          if (messageDeleted.message) {
+            messagesToRemove.push(messageDeleted.message);
+          }
+        });
+      }
+    });
+    await addMessages(db, gmail, userId, messagesToAdd);
+    await deleteMessages(db, messagesToRemove);
+
+    // Update to the last historyId
+    // TODO: Handle when more than 500 updates occur
+    await db.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        lastHistoryId: res.data.historyId,
+      },
+    });
+  } catch (err) {
+    console.log("Handling Error ", err);
+    // Invalid start historyId restart full sync
+    const resp = await db.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        lastHistoryId: null,
+        isSynced: false,
+        nextPageToken: null,
+      },
+    });
+    console.log("No history found.");
+    return resp;
+  }
+}
+
+async function backFillUpdates(
+  db: PrismaClient,
+  accessToken: string | null,
+  userId: string,
+) {
+  const gmail = getGmailClient(accessToken);
+
+  const user = await db.user.findFirst({
+    where: {
+      id: userId,
+    },
+  });
+
+  if (!user) {
+    return;
+  }
+
+  const nextPageToken = user.nextPageToken ?? undefined;
+  console.log("===============" + user.nextPageToken);
+
+  const res = await gmail.users.messages.list({
+    userId: "me",
+    maxResults: 300,
+    pageToken: nextPageToken,
+  });
+  if (!res.data?.messages) {
+    assert("This should not happen");
+  }
+
+  const messages = res.data.messages;
+  if (!messages || messages.length === 0) {
+    console.log("No messages found.");
+    return;
+  }
+  const message = messages[0];
+
+  console.log("==========", user.lastHistoryId);
+
+  if (user.lastHistoryId === undefined || user.lastHistoryId === null) {
+    //TODO: Inspect if not setting the history is the correct behaviour
+    if (message?.id) {
+      const firstMessage = await getMessage(gmail, message.id, "minimal");
+      const history = firstMessage.data.historyId;
+      console.log("==== set history =====", history);
+      await db.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          lastHistoryId: history,
+        },
+      });
+    }
+  }
+
+  await db.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      nextPageToken: res.data.nextPageToken,
+      isSynced:
+        res.data.nextPageToken !== undefined && res.data.nextPageToken !== null,
+    },
+  });
+
+  await addMessages(db, gmail, userId, messages);
+
+  return true;
+}
