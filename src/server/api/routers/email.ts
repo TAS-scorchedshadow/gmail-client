@@ -448,7 +448,7 @@ async function syncedHistory(
   try {
     const res = await gmail.users.history.list({
       userId: "me",
-      maxResults: 300,
+      maxResults: parseInt(process.env.MAX_RECENT_EMAILS ?? "100"),
       startHistoryId: lastHistory,
     });
 
@@ -526,7 +526,7 @@ async function backFillUpdates(
 
   const res = await gmail.users.messages.list({
     userId: "me",
-    maxResults: 300,
+    maxResults: parseInt(process.env.MAX_RECENT_EMAILS ?? "100"),
     pageToken: nextPageToken,
   });
   if (!res.data?.messages) {
