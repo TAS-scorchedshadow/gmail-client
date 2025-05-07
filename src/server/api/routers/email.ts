@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { type gmail_v1, google } from "googleapis";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
@@ -360,6 +361,7 @@ export const emailRouter = createTRPCRouter({
     //   "Found users",
     //   users.map((u) => u.email),
     // );
+    const updated = [];
     for (const user of users) {
       const googleAccount = user.accounts[0];
 
@@ -377,8 +379,10 @@ export const emailRouter = createTRPCRouter({
         continue;
       }
       await backFillUpdates(ctx.db, googleAccount.access_token, user.id);
+      updated.push(user.email);
       // console.warn("Successfully awaited", user.email);
     }
+    return updated;
   }),
 
   syncedHistoryAllUsers: publicProcedure.mutation(async ({ ctx }) => {
