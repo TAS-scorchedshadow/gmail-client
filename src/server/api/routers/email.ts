@@ -1,11 +1,9 @@
-import { gmail_v1, google } from "googleapis";
+import { google } from "googleapis";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
-import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 
 import { getFromS3Bucket, putS3Bucket } from "../service/s3service";
-import { addMessages, getMessage } from "../service/message";
 import { refreshThread } from "../service/refresh";
 import { backFillUpdates } from "../service/backfill";
 import { syncedHistory } from "../service/sync";
