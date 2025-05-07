@@ -16,7 +16,6 @@ import {
   Users2,
 } from "lucide-react";
 import { TooltipProvider } from "~/components/ui/tooltip";
-import { AccountSwitcher } from "./AccountSwitcher";
 import { Separator } from "~/components/ui/separator";
 import { Nav } from "./Nav";
 import {
@@ -36,11 +35,6 @@ import { Button } from "~/components/ui/button";
 import Link from "next/link";
 
 interface MailProps {
-  accounts: {
-    label: string;
-    email: string;
-    icon: React.ReactNode;
-  }[];
   mails: Mail[];
   user: Session["user"];
   defaultLayout: number[] | undefined;
@@ -49,7 +43,6 @@ interface MailProps {
 }
 
 export function Mail({
-  accounts,
   defaultLayout = [20, 32, 48],
   defaultCollapsed = false,
   navCollapsedSize,
@@ -189,7 +182,11 @@ export function Mail({
             />
           </ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={defaultLayout[1]} minSize={20}>
+          <ResizablePanel
+            defaultSize={defaultLayout[1]}
+            minSize={20}
+            className="flex flex-col"
+          >
             <Tabs defaultValue="all">
               <div className="flex items-center px-4 py-2">
                 <h1 className="text-xl font-bold">Inbox</h1>
@@ -209,28 +206,30 @@ export function Mail({
                 </TabsList>
               </div>
               <Separator />
-              <div className="bg-background/95 supports-[backdrop-filter]:bg-background/60 p-4 backdrop-blur">
-                <form>
-                  <div className="relative">
-                    <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4" />
-                    <Input
-                      placeholder="Search"
-                      className="pl-8"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                    />
-                  </div>
-                </form>
+              <div className="flex h-full flex-col">
+                <div className="bg-background/95 supports-[backdrop-filter]:bg-background/60 p-4 backdrop-blur">
+                  <form>
+                    <div className="relative">
+                      <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4" />
+                      <Input
+                        placeholder="Search"
+                        className="pl-8"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                      />
+                    </div>
+                  </form>
+                </div>
+                <TabsContent value="all" className="m-0">
+                  <MailList search={search} />
+                </TabsContent>
+                <TabsContent value="unread" className="m-0">
+                  <MailList
+                    // items={mails.filter((item) => !item.read)}
+                    search={search}
+                  />
+                </TabsContent>
               </div>
-              <TabsContent value="all" className="m-0">
-                <MailList search={search} />
-              </TabsContent>
-              <TabsContent value="unread" className="m-0">
-                <MailList
-                  // items={mails.filter((item) => !item.read)}
-                  search={search}
-                />
-              </TabsContent>
             </Tabs>
           </ResizablePanel>
           <ResizableHandle withHandle />

@@ -3,6 +3,7 @@ import { api } from "~/trpc/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import ThreadPreview from "./mail /ThreadPreview";
 import Spinner from "../spinner";
+import useWindowDimensions from "~/app/hooks/useWindowDimensions";
 
 const NUM_PER_PAGE = 50;
 
@@ -29,6 +30,7 @@ export function MailList({ search }: { search: string }) {
     hasNextPage,
   } = query;
 
+  const { height } = useWindowDimensions();
   const allRows = data ? data.pages.flatMap((d) => d.data) : [];
 
   const parentRef = useRef<HTMLDivElement>(null);
@@ -77,12 +79,12 @@ export function MailList({ search }: { search: string }) {
   }
 
   return (
-    <div className="h-full">
+    <div className="flex flex-1 flex-col">
       <div
         ref={parentRef}
         onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}
         style={{
-          height: `600px`,
+          height: `${height - 150}px`,
           width: `100%`,
           overflow: "auto",
         }}

@@ -23,7 +23,6 @@ export default function MailPage({ user }: { user: Session["user"] }) {
         </Button>
       </div>
       <Mail
-        accounts={accounts}
         mails={mails}
         user={user}
         defaultLayout={undefined}
