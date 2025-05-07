@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "~/components/ui/button";
-import { accounts, mails } from "./data";
+import { mails } from "./data";
 import { Mail } from "./Mail";
 import { api } from "~/trpc/react";
 import type { Session } from "next-auth";

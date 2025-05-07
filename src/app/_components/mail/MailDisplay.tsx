@@ -35,7 +35,6 @@ import {
 import Thread from "./mail /Thread";
 import { useSafeContext } from "./providers/useSafeContext";
 import { ThreadContext } from "./providers/ThreadContext";
-import { ScrollArea } from "~/components/ui/scroll-area";
 
 export function MailDisplay() {
   const today = new Date();
