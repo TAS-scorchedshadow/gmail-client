@@ -82,7 +82,7 @@ export function MailList({ search }: { search: string }) {
         ref={parentRef}
         onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}
         style={{
-          height: `500px`,
+          height: `600px`,
           width: `100%`,
           overflow: "auto",
         }}

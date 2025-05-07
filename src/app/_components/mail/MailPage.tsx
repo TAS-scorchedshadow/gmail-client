@@ -1,9 +1,12 @@
+"use client";
+
 import { Button } from "~/components/ui/button";
 import { accounts, mails } from "./data";
 import { Mail } from "./Mail";
 import { api } from "~/trpc/react";
+import type { Session } from "next-auth";
 
-export default function MailPage() {
+export default function MailPage({ user }: { user: Session["user"] }) {
   // const defaultLayout = "react-resizable-panels:layout:mail";
   // const defaultCollapsed = "react-resizable-panels:collapsed";
   const mut = api.email.backFillUpdatesAllUsers.useMutation({});
@@ -22,6 +25,7 @@ export default function MailPage() {
       <Mail
         accounts={accounts}
         mails={mails}
+        user={user}
         defaultLayout={undefined}
         navCollapsedSize={0}
       />

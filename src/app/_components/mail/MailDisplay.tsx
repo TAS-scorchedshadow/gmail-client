@@ -35,6 +35,7 @@ import {
 import Thread from "./mail /Thread";
 import { useSafeContext } from "./providers/useSafeContext";
 import { ThreadContext } from "./providers/ThreadContext";
+import { ScrollArea } from "~/components/ui/scroll-area";
 
 export function MailDisplay() {
   const today = new Date();
@@ -43,7 +44,7 @@ export function MailDisplay() {
 
   const mail = activeThread;
   return (
-    <div className="flex h-full flex-col">
+    <div className="h-max-screen flex h-full flex-col">
       <div className="flex items-center p-2">
         <div className="flex items-center gap-2">
           <Tooltip>

@@ -7,6 +7,7 @@ import {
   ArchiveX,
   File,
   Inbox,
+  LogOutIcon,
   MessagesSquare,
   Search,
   Send,
@@ -30,6 +31,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Input } from "~/components/ui/input";
 import type { Mail } from "./data";
 import { ThreadProvider } from "./providers/ThreadContext";
+import type { Session } from "next-auth";
+import { Button } from "~/components/ui/button";
+import Link from "next/link";
 
 interface MailProps {
   accounts: {
@@ -38,6 +42,7 @@ interface MailProps {
     icon: React.ReactNode;
   }[];
   mails: Mail[];
+  user: Session["user"];
   defaultLayout: number[] | undefined;
   defaultCollapsed?: boolean;
   navCollapsedSize: number;
@@ -48,6 +53,7 @@ export function Mail({
   defaultLayout = [20, 32, 48],
   defaultCollapsed = false,
   navCollapsedSize,
+  user,
 }: MailProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed);
 
@@ -63,7 +69,7 @@ export function Mail({
               sizes,
             )}`;
           }}
-          className="h-full max-h-[800px] items-stretch"
+          className="h-full"
         >
           <ResizablePanel
             defaultSize={defaultLayout[0]}
@@ -90,11 +96,18 @@ export function Mail({
           >
             <div
               className={cn(
-                "flex h-[52px] items-center justify-center",
+                "flex h-[52px] items-center justify-between text-xs",
                 isCollapsed ? "h-[52px]" : "px-2",
               )}
             >
-              <AccountSwitcher isCollapsed={isCollapsed} accounts={accounts} />
+              {user.email}
+              <Link href={"/api/auth/signout"} className="cursor-pointer">
+                <Button className="cursor-pointer">
+                  <p>Sign Out</p>
+                  <LogOutIcon />
+                </Button>
+              </Link>
+              {/* <AccountSwitcher isCollapsed={isCollapsed} accounts={accounts} /> */}
             </div>
             <Separator />
             <Nav
