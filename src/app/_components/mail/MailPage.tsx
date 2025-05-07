@@ -9,8 +9,17 @@ import type { Session } from "next-auth";
 export default function MailPage({ user }: { user: Session["user"] }) {
   // const defaultLayout = "react-resizable-panels:layout:mail";
   // const defaultCollapsed = "react-resizable-panels:collapsed";
-  const mut = api.email.backFillUpdatesAllUsers.useMutation({});
-  const mutSync = api.email.syncedHistoryAllUsers.useMutation({});
+  const utils = api.useUtils();
+  const mut = api.email.backFillUpdatesAllUsers.useMutation({
+    onSuccess: async () => {
+      await utils.email.invalidate();
+    },
+  });
+  const mutSync = api.email.syncedHistoryAllUsers.useMutation({
+    onSuccess: async () => {
+      await utils.email.invalidate();
+    },
+  });
 
   return (
     <div className="flex w-full flex-col">

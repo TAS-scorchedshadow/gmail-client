@@ -62,7 +62,7 @@ export function Mail({
               sizes,
             )}`;
           }}
-          className="h-full"
+          className="min-h-screen"
         >
           <ResizablePanel
             defaultSize={defaultLayout[0]}

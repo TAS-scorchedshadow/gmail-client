@@ -2,7 +2,7 @@ import { useRef, useCallback, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import ThreadPreview from "./mail /ThreadPreview";
-import Spinner from "../spinner";
+import Spinner from "../../icons/spinner";
 import useWindowDimensions from "~/app/hooks/useWindowDimensions";
 
 const NUM_PER_PAGE = 50;
