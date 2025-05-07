@@ -399,6 +399,7 @@ export const emailRouter = createTRPCRouter({
     //   "Found users",
     //   users.map((u) => u.email),
     // );
+    const updated = [];
     for (const user of users) {
       const googleAccount = user.accounts[0];
 
@@ -417,8 +418,10 @@ export const emailRouter = createTRPCRouter({
       }
 
       await syncedHistory(ctx.db, googleAccount.access_token, user.id);
+      updated.push(user.email);
       // console.warn("Successfully awaited", user.email);
     }
+    return updated;
   }),
 });
 
