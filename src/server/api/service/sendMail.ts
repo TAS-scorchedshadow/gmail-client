@@ -13,22 +13,23 @@ export default async function sendMessage(
   bcc?: string | string[],
   inReplyTo?: string,
 ) {
-  // console.log(to, subject, text, html, cc, bcc);
+  console.log(to, subject, text, html, cc, bcc);
+  console.log(user.email);
 
   const mail = new MailComposer({
-    from: user.email ?? "",
+    from: user.email && user.name ? `${user.name} <${user.email}>` : "",
     to: to,
     subject: subject,
-    text: text,
+    text: "No text backup",
+    html: html,
     inReplyTo: inReplyTo,
   });
 
   const message = await mail.compile().build();
 
-  const base64EncodedEmail = Buffer.from(message)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
+  const base64EncodedEmail = Buffer.from(message).toString("base64");
+  // .replace(/\+/g, "-")
+  // .replace(/\//g, "_");
 
   const res = await gmailClient.users.messages.send({
     userId: "me",

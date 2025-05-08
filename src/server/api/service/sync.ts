@@ -28,9 +28,12 @@ async function syncedHistory(
     });
 
     if (!res.data.history) {
+      console.log("No updates");
       // No updates
       return;
     }
+
+    console.log("has updates");
     const messagesToAdd: gmail_v1.Schema$Message[] = [];
     const messagesToRemove: gmail_v1.Schema$Message[] = [];
     res.data.history.forEach((history) => {

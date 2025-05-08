@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export type DBAddress = {
   name: string;
-  email?: string;
+  email: string;
 };
 
 export type DBMessage = {

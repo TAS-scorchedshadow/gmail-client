@@ -107,7 +107,7 @@ export default function MailSendDialog() {
               )}
             ></FormField>
             <FormField
-              name={"text"}
+              name={"html"}
               control={form.control}
               render={({ field }) => (
                 <FormItem className="flex flex-1 flex-col items-start">

@@ -3,7 +3,7 @@ import elipseSubstring from "~/app/utils/substring";
 import { formatDistanceToNow } from "date-fns/formatDistanceToNow";
 import { useSafeContext } from "../../../providers/useSafeContext";
 import { ThreadContext } from "../../../providers/ThreadContext";
-import type { DBThread } from "~/server/types";
+import type { DBAddress, DBThread } from "~/server/types";
 import { unescape } from "lodash";
 
 export default function ThreadPreview({ thread }: { thread: DBThread }) {
@@ -15,18 +15,14 @@ export default function ThreadPreview({ thread }: { thread: DBThread }) {
 
   const message = thread.messages[0]!;
 
-  const headers = message.headers;
-
-  if (!headers) {
-    return <div>Loading</div>;
-  }
+  const from: DBAddress = message.from[0] ?? { email: "Unknown", name: "" };
 
   const sender = elipseSubstring(
-    message.from.map((f) => f.name).join(", "),
+    from.name && from.name !== "" ? `${from.name} <${from.email}>` : from.email,
     40,
   );
 
-  const date = headers?.find((h) => h.key === "date")?.line;
+  const date = message.date;
 
   return (
     <button

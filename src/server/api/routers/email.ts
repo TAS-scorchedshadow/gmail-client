@@ -211,7 +211,7 @@ export const emailRouter = createTRPCRouter({
         user.id,
       );
       updated.push(user.email);
-      // console.warn("Successfully awaited", user.email);
+      console.warn("Successfully awaited", user.email);
     }
     return updated;
   }),

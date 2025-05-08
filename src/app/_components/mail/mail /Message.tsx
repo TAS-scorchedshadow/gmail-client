@@ -3,7 +3,7 @@ import { Separator } from "~/components/ui/separator";
 import { format } from "date-fns/format";
 import elipseSubstring from "~/app/utils/substring";
 import DOMPurify from "dompurify";
-import type { DBMessage } from "~/server/types";
+import type { DBAddress, DBMessage } from "~/server/types";
 import { unescape } from "lodash";
 import { useQuery } from "@tanstack/react-query";
 
@@ -36,11 +36,14 @@ export default function Message({
 
   const html = query.data ?? "";
 
-  const headers = message.headers;
+  const from: DBAddress = message.from[0] ?? { email: "Unknown", name: "" };
 
-  const _sender = message.from.map((f) => f.name).join(", ");
-  const sender = elipseSubstring(_sender, 40);
-  const date = headers?.find((h) => h.key === "date")?.line;
+  const sender = elipseSubstring(
+    from.name && from.name !== "" ? `${from.name} <${from.email}>` : from.email,
+    40,
+  );
+
+  const date = message.date;
 
   return (
     <div className="mb-10 flex flex-1 flex-col">
@@ -49,7 +52,7 @@ export default function Message({
           <Avatar>
             <AvatarImage alt={sender} />
             <AvatarFallback>
-              {sender
+              {from.name
                 .split(" ")
                 .map((chunk) => chunk[0])
                 .join("")}

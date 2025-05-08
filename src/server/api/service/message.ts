@@ -76,6 +76,8 @@ async function addMessages(
 
       const rawContent = Buffer.from(data.raw, "base64").toString("utf-8");
       const parsed: ParsedMail = await simpleParser(rawContent);
+
+      // TODO: Support text only emails
       if (!parsed.html) {
         return false;
       }
@@ -92,6 +94,7 @@ async function addMessages(
       ) {
         return false;
       }
+      console.log(parsed.from);
 
       const toInsert: DBMessage = {
         id: data.id,

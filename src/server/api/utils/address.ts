@@ -5,7 +5,7 @@ export function parseAddress(address: AddressObject): DBAddress[] {
   return address.value.map((val) => {
     return {
       name: val.name,
-      email: val.address,
+      email: val.address ?? "unknown",
     };
   });
 }
