@@ -54,7 +54,12 @@ export default function MailSendDialog() {
       <DialogTrigger className="w-full cursor-pointer rounded-md bg-amber-100 p-2">
         Compose
       </DialogTrigger>
-      <DialogContent className="flex h-[75vh] min-w-[50vw] flex-col">
+      <DialogContent
+        className="flex h-[75vh] min-w-[50vw] flex-col"
+        onInteractOutside={(e) => {
+          e.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Send Email</DialogTitle>
           <DialogDescription>Send an email</DialogDescription>

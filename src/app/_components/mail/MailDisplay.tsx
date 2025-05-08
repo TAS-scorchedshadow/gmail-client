@@ -72,7 +72,7 @@ export function MailDisplay() {
       res,
     );
     setValue("subject", `Fwd: ${activeThread.messages[0]?.subject}`);
-    setValue("text", forwardHeaders);
+    setValue("html", forwardHeaders);
     setOpen(true);
   }
   async function handleReply() {
@@ -93,7 +93,7 @@ export function MailDisplay() {
     );
     setValue("to", `Re: ${activeThread.messages[0]?.from[0]?.email}`);
     setValue("subject", `Re: ${activeThread.messages[0]?.subject}`);
-    setValue("text", forwardHeaders);
+    setValue("html", forwardHeaders);
     setValue("inReplyTo", message.emailRawId);
     setOpen(true);
   }

@@ -19,7 +19,6 @@ export default function Thread({ thread }: { thread: DBThread }) {
   const sender = elipseSubstring(_sender, 40);
   // const subject = headers?.find((h) => h.key === "Subject")?.line ?? "Unknown";
   // const date = headers?.find((h) => h.line === "Date")?.line;
-  console.log(thread);
 
   return (
     <div className="flex flex-1 flex-col">

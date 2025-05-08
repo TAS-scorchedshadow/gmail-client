@@ -27,7 +27,6 @@ export default function Message({
   //     .then((resp) => setHtml(resp))
   //     .catch((err) => "Error" + console.log(err));
   // }, [message]);
-  console.log(message);
 
   const query = useQuery({
     queryKey: ["message", message.id],

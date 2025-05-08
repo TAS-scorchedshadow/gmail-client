@@ -50,7 +50,6 @@ export function replyMessageHTML(
   to: DBAddress,
   body: string,
 ) {
-  console.log(body);
   return `
   <br>
   <br>
