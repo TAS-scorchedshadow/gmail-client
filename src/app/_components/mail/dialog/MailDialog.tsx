@@ -43,7 +43,12 @@ export default function MailSendDialog() {
 
   console.log(form.getValues());
 
-  const emailMutation = api.email.sendEmail.useMutation();
+  const emailMutation = api.email.sendEmail.useMutation({
+    onSuccess: () => {
+      setOpen(false);
+    },
+  });
+  const { isPending } = emailMutation;
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger className="w-full cursor-pointer rounded-md bg-amber-100 p-2">
@@ -117,7 +122,11 @@ export default function MailSendDialog() {
                 </FormItem>
               )}
             ></FormField>
-            <Button role="submit">
+            <Button
+              role="submit"
+              disabled={isPending}
+              className="cursor-pointer"
+            >
               <span>Send</span>
               <SendIcon className="ml-2 h-4 w-4" />
             </Button>

@@ -15,7 +15,8 @@ const Tiptap = ({
     extensions: [StarterKit, Blockquote],
     editorProps: {
       attributes: {
-        class: "w-full max-w-[45vw] max-h-[40vh] overflow-auto",
+        class:
+          "w-full min-w-[45vw] max-w-[45vw] min-h-[40vh] max-h-[40vh] overflow-auto border-1 rounded-sm",
       },
     },
     content: initialContent,
