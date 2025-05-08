@@ -1,7 +1,10 @@
 import type { gmail_v1 } from "googleapis/build/src/apis/gmail/v1";
+import type { User } from "next-auth";
+import MailComposer from "nodemailer/lib/mail-composer";
 
 export default async function sendMessage(
   gmailClient: gmail_v1.Gmail,
+  user: User,
   to: string | string[],
   subject: string,
   text?: string,
@@ -9,25 +12,28 @@ export default async function sendMessage(
   cc?: string | string[],
   bcc?: string | string[],
 ) {
-  console.log(to, subject, text, html, cc, bcc);
-  const emailContent = [
-    `To: ${formatRecipients(to)}`,
-    `Subject: ${subject}`,
-    "MIME-Version: 1.0",
-    'Content-Type: text/html; charset="UTF-8"',
-    "",
-    html ?? text, // Prefer HTML if provided, otherwise use text
-  ].join("\n");
+  // console.log(to, subject, text, html, cc, bcc);
 
-  // Base64url encode the email content
+  const mail = new MailComposer({
+    from: user.email ?? "",
+    to: to,
+    subject: subject,
+    text: text,
+  });
 
-  console.log(emailContent);
+  console.log("there", to, subject);
+  const message = await mail.compile().build();
+  console.log("Here");
 
-  const encodedEmail = Buffer.from(emailContent).toString("base64");
+  const base64EncodedEmail = Buffer.from(message)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+
   const res = await gmailClient.users.messages.send({
     userId: "me",
     requestBody: {
-      raw: encodedEmail,
+      raw: base64EncodedEmail,
     },
   });
   return res;

@@ -221,6 +221,7 @@ export const emailRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const res = await sendMessage(
         getGmailClient(ctx.session.accessToken),
+        ctx.session.user,
         input.to,
         input.subject,
         input.text,
