@@ -10,10 +10,10 @@ import {
 import { type Tag, TagInput } from "emblor";
 import { useState } from "react";
 import { Textarea } from "~/components/ui/textarea";
-import validateEmail from "~/app/utils/emailValidator";
+import validateEmail from "~/app/utils/emailHelper";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
-import { useForm } from "react-hook-form";
+import { useForm, useFormContext } from "react-hook-form";
 import { type z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { emailZodType } from "~/server/types";
@@ -26,18 +26,12 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { SendIcon } from "lucide-react";
+import { useSafeContext } from "~/app/providers/useSafeContext";
+import { SendModalContext } from "~/app/providers/SendContext";
 
 export default function MailSendDialog() {
-  const form = useForm<z.infer<typeof emailZodType>>({
-    resolver: zodResolver(emailZodType),
-    defaultValues: {
-      to: [],
-      cc: [],
-      bcc: [],
-      subject: "",
-      text: "",
-    },
-  });
+  const { open, setOpen } = useSafeContext(SendModalContext);
+  const form = useFormContext<z.infer<typeof emailZodType>>();
 
   const [tags, setTags] = useState<Tag[]>([]);
   const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
@@ -52,7 +46,7 @@ export default function MailSendDialog() {
 
   const emailMutation = api.email.sendEmail.useMutation();
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger className="w-full cursor-pointer rounded-md bg-amber-100 p-2">
         Compose
       </DialogTrigger>
@@ -117,7 +111,7 @@ export default function MailSendDialog() {
                   <FormControl>
                     <Textarea
                       placeholder="Compose your email..."
-                      className="flex-1 resize-none"
+                      className="max-h-[40vh] flex-1 resize-none overflow-y-scroll"
                       {...field}
                     />
                   </FormControl>
@@ -127,7 +121,7 @@ export default function MailSendDialog() {
             ></FormField>
             <Button role="submit">
               <span>Send</span>
-              <SendIcon className="h-4 w-4" />
+              <SendIcon className="ml-2 h-4 w-4" />
             </Button>
           </form>
         </Form>

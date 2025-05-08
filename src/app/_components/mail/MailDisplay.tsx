@@ -33,13 +33,44 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import Thread from "./mail /Thread";
-import { useSafeContext } from "./providers/useSafeContext";
-import { ThreadContext } from "./providers/ThreadContext";
+import { useSafeContext } from "../../providers/useSafeContext";
+import { ThreadContext } from "../../providers/ThreadContext";
+import { SendModalContext } from "~/app/providers/SendContext";
+import { useFormContext } from "react-hook-form";
+import type { z } from "zod";
+import type { emailZodType } from "~/server/types";
+import { forwardedMessageHeader } from "~/app/utils/emailHelper";
+import { useSession } from "next-auth/react";
+import { use } from "react";
 
 export function MailDisplay() {
   const today = new Date();
 
   const { activeThread } = useSafeContext(ThreadContext);
+  const { setOpen } = useSafeContext(SendModalContext);
+
+  const form = useFormContext<z.infer<typeof emailZodType>>();
+  const { setValue } = form;
+  const { data: session } = useSession();
+
+  async function handleForward() {
+    const message = activeThread.messages[0];
+    setOpen(true);
+    if (!message) return;
+    // const res = await fetch(message!.s3Link).then((res) => res.text());
+    // console.log(res);
+    const forwardHeaders = forwardedMessageHeader(
+      message.from[0]!,
+      today,
+      message.subject,
+      {
+        name: session?.user.name ?? "",
+        email: session?.user.email ?? "",
+      },
+    );
+    setValue("subject", `Fwd: ${activeThread.messages[0]?.subject}`);
+    setValue("text", forwardHeaders + "\n\n" + message.text);
+  }
 
   const mail = activeThread;
   return (
@@ -155,7 +186,12 @@ export function MailDisplay() {
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" disabled={!mail}>
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={!mail}
+                onClick={() => handleForward()}
+              >
                 <Forward className="h-4 w-4" />
                 <span className="sr-only">Forward</span>
               </Button>

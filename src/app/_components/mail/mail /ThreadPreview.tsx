@@ -1,8 +1,8 @@
 import { cn } from "~/lib/utils";
 import elipseSubstring from "~/app/utils/substring";
 import { formatDistanceToNow } from "date-fns/formatDistanceToNow";
-import { useSafeContext } from "../providers/useSafeContext";
-import { ThreadContext } from "../providers/ThreadContext";
+import { useSafeContext } from "../../../providers/useSafeContext";
+import { ThreadContext } from "../../../providers/ThreadContext";
 import type { DBThread } from "~/server/types";
 import { unescape } from "lodash";
 

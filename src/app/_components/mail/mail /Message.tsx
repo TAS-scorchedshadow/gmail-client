@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import DOMPurify from "dompurify";
 import type { DBMessage } from "~/server/types";
 import { unescape } from "lodash";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Message({
   message,
@@ -17,16 +18,23 @@ export default function Message({
   //   key: `message-${message.id}`,
   // });
 
-  const [html, setHtml] = useState<string>("");
-  useEffect(() => {
-    console.log(message);
-    fetch(message.s3Link)
-      .then((res) => {
-        return res.text();
-      })
-      .then((resp) => setHtml(resp))
-      .catch((err) => "Error" + console.log(err));
-  }, [message]);
+  // const [html, setHtml] = useState<string>("");
+  // useEffect(() => {
+  //   console.log(message);
+  //   fetch(message.s3Link)
+  //     .then((res) => {
+  //       return res.text();
+  //     })
+  //     .then((resp) => setHtml(resp))
+  //     .catch((err) => "Error" + console.log(err));
+  // }, [message]);
+
+  const query = useQuery({
+    queryKey: ["message", message.id],
+    queryFn: () => fetch(message.s3Link).then((res) => res.text()),
+  });
+
+  const html = query.data ?? "";
 
   const headers = message.headers;
 
