@@ -33,6 +33,7 @@ import { ThreadProvider } from "./providers/ThreadContext";
 import type { Session } from "next-auth";
 import { Button } from "~/components/ui/button";
 import Link from "next/link";
+import MailSendDialog from "./dialog/MailDialog";
 
 interface MailProps {
   mails: Mail[];
@@ -103,6 +104,14 @@ export function Mail({
               {/* <AccountSwitcher isCollapsed={isCollapsed} accounts={accounts} /> */}
             </div>
             <Separator />
+            <div
+              className={cn(
+                "flex h-[52px] items-center justify-between text-xs",
+                isCollapsed ? "h-[52px]" : "px-2",
+              )}
+            >
+              <MailSendDialog />
+            </div>
             <Nav
               isCollapsed={isCollapsed}
               links={[
