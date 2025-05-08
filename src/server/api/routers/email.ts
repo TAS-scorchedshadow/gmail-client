@@ -7,6 +7,8 @@ import { getFromS3Bucket, putS3Bucket } from "../service/s3service";
 import { refreshThread } from "../service/refresh";
 import { backFillUpdates } from "../service/backfill";
 import { syncedHistory } from "../service/sync";
+import sendMessage from "../service/sendMail";
+import { emailZodType } from "~/server/types";
 
 function getGmailClient(access_token: string | null) {
   if (!access_token) {
@@ -213,4 +215,19 @@ export const emailRouter = createTRPCRouter({
     }
     return updated;
   }),
+
+  sendEmail: protectedProcedure
+    .input(emailZodType)
+    .mutation(async ({ ctx, input }) => {
+      const res = await sendMessage(
+        getGmailClient(ctx.session.accessToken),
+        input.to,
+        input.subject,
+        input.text,
+        input.html,
+        input.cc,
+        input.bcc,
+      );
+      return res;
+    }),
 });

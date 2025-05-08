@@ -11,10 +11,46 @@ import { type Tag, TagInput } from "emblor";
 import { useState } from "react";
 import { Textarea } from "~/components/ui/textarea";
 import validateEmail from "~/app/utils/emailValidator";
+import { Input } from "~/components/ui/input";
+import { api } from "~/trpc/react";
+import { useForm } from "react-hook-form";
+import { type z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { emailZodType } from "~/server/types";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "~/components/ui/form";
+import { SendIcon } from "lucide-react";
 
 export default function MailSendDialog() {
+  const form = useForm<z.infer<typeof emailZodType>>({
+    resolver: zodResolver(emailZodType),
+    defaultValues: {
+      to: [],
+      cc: [],
+      bcc: [],
+      subject: "",
+      text: "",
+    },
+  });
+
   const [tags, setTags] = useState<Tag[]>([]);
   const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
+
+  const { setValue } = form;
+  function onSubmit(data: z.infer<typeof emailZodType>) {
+    console.log(data);
+    emailMutation.mutate(data);
+  }
+
+  console.log(form.getValues());
+
+  const emailMutation = api.email.sendEmail.useMutation();
   return (
     <Dialog>
       <DialogTrigger className="w-full cursor-pointer rounded-md bg-amber-100 p-2">
@@ -25,18 +61,76 @@ export default function MailSendDialog() {
           <DialogTitle>Send Email</DialogTitle>
           <DialogDescription>Send an email</DialogDescription>
         </DialogHeader>
-        <TagInput
-          placeholder="To"
-          tags={tags}
-          setTags={(newTags) => {
-            setTags(newTags);
-          }}
-          activeTagIndex={activeTagIndex}
-          setActiveTagIndex={setActiveTagIndex}
-          validateTag={(str) => validateEmail(str)}
-        />
-        <Textarea placeholder="Compose your email..." className="flex-1" />
-        <Button>Send</Button>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex h-full flex-col gap-2"
+          >
+            <FormField
+              control={form.control}
+              render={({ field }) => (
+                <FormItem className="flex flex-col items-start">
+                  <FormLabel className="text-left">To</FormLabel>
+                  <FormControl>
+                    <TagInput
+                      {...field}
+                      placeholder="To"
+                      tags={tags}
+                      setTags={(newTags) => {
+                        const nTags = newTags as Tag[];
+                        setTags(newTags);
+                        setValue(
+                          "to",
+                          nTags.map((t) => t.text),
+                        );
+                      }}
+                      activeTagIndex={activeTagIndex}
+                      setActiveTagIndex={setActiveTagIndex}
+                      validateTag={(str) => validateEmail(str)}
+                      addTagsOnBlur={true}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+              name={"to"}
+            ></FormField>
+            <FormField
+              name={"subject"}
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-left">Subject</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Subject" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            ></FormField>
+            <FormField
+              name={"text"}
+              control={form.control}
+              render={({ field }) => (
+                <FormItem className="flex flex-1 flex-col items-start">
+                  <FormLabel className="text-left">Text</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Compose your email..."
+                      className="flex-1 resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            ></FormField>
+            <Button role="submit">
+              <span>Send</span>
+              <SendIcon className="h-4 w-4" />
+            </Button>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

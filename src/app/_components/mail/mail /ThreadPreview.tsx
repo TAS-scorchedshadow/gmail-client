@@ -26,7 +26,6 @@ export default function ThreadPreview({ thread }: { thread: DBThread }) {
     40,
   );
 
-  console.log(headers);
   const date = headers?.find((h) => h.key === "date")?.line;
 
   return (
@@ -38,7 +37,6 @@ export default function ThreadPreview({ thread }: { thread: DBThread }) {
       )}
       onClick={() => {
         // mut.mutate({threadId: thread.id! });
-        console.log(message.snippet);
         setActiveThread(thread);
       }}
     >

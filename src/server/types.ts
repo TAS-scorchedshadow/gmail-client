@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export type DBAddress = {
   name: string;
   email?: string;
@@ -25,3 +27,12 @@ export type DBThread = {
   id: string;
   messages: DBMessage[];
 };
+
+export const emailZodType = z.object({
+  to: z.union([z.string().email(), z.array(z.string().email())]),
+  cc: z.union([z.string().email(), z.array(z.string().email())]).optional(),
+  bcc: z.union([z.string().email(), z.array(z.string().email())]).optional(),
+  subject: z.string().min(1, "Subject cannot be empty"),
+  text: z.string().optional(),
+  html: z.string().optional(),
+});
