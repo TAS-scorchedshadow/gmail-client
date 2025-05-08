@@ -39,7 +39,10 @@ import { SendModalContext } from "~/app/providers/SendContext";
 import { useFormContext } from "react-hook-form";
 import type { z } from "zod";
 import type { emailZodType } from "~/server/types";
-import { forwardedMessageHTML } from "~/app/utils/emailHelper";
+import {
+  forwardedMessageHTML,
+  replyMessageHTML,
+} from "~/app/utils/emailHelper";
 import { useSession } from "next-auth/react";
 
 export function MailDisplay() {
@@ -70,6 +73,28 @@ export function MailDisplay() {
     );
     setValue("subject", `Fwd: ${activeThread.messages[0]?.subject}`);
     setValue("text", forwardHeaders);
+    setOpen(true);
+  }
+  async function handleReply() {
+    const message = activeThread.messages[0];
+    if (!message) {
+      return;
+    }
+    const res = await fetch(message.s3Link).then((res) => res.text());
+    const forwardHeaders = replyMessageHTML(
+      message.from[0]!,
+      today,
+      message.subject,
+      {
+        name: session?.user.name ?? "",
+        email: session?.user.email ?? "",
+      },
+      res,
+    );
+    setValue("to", `Re: ${activeThread.messages[0]?.from[0]?.email}`);
+    setValue("subject", `Re: ${activeThread.messages[0]?.subject}`);
+    setValue("text", forwardHeaders);
+    setValue("inReplyTo", message.emailRawId);
     setOpen(true);
   }
 
@@ -169,7 +194,12 @@ export function MailDisplay() {
         <div className="ml-auto flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" disabled={!mail}>
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={!mail}
+                onClick={() => handleReply()}
+              >
                 <Reply className="h-4 w-4" />
                 <span className="sr-only">Reply</span>
               </Button>

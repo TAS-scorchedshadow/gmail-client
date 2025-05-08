@@ -37,6 +37,7 @@ model Thread {
 model Message {
     id       String @id
     s3Link   String
+    emailRawId   String
     snippet  String
     thread   Thread @relation(fields: [threadId], references: [id])
     threadId String

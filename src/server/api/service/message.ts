@@ -83,12 +83,19 @@ async function addMessages(
       await putS3Bucket(`message-${message.id}`, parsed.html);
       const link = await getSignedUrlS3(`message-${message.id}`);
 
-      if (!parsed.subject || !parsed.from || !parsed.date || !parsed.to) {
+      if (
+        !parsed.subject ||
+        !parsed.from ||
+        !parsed.date ||
+        !parsed.to ||
+        !parsed.messageId
+      ) {
         return false;
       }
 
       const toInsert: DBMessage = {
         id: data.id,
+        emailRawId: parsed.messageId,
         s3Link: link,
         headers: [...parsed.headerLines],
         subject: parsed.subject.toString(),

@@ -228,6 +228,7 @@ export const emailRouter = createTRPCRouter({
         input.html,
         input.cc,
         input.bcc,
+        input.inReplyTo,
       );
       return res;
     }),

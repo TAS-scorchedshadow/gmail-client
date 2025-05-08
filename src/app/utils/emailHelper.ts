@@ -42,4 +42,24 @@ export function forwardedMessageHTML(
   ${body}
   `;
 }
+
+export function replyMessageHTML(
+  from: DBAddress,
+  date: Date,
+  subject: string,
+  to: DBAddress,
+  body: string,
+) {
+  console.log(body);
+  return `
+  <br>
+  <br>
+  <p>---------- Replying To ---------</p>
+  <p>From: ${from.name} <${from.email}> </p>
+  <p>Date: ${date.toUTCString()} </p>
+  <p>Subject: ${subject} </p>
+  <p>To: ${to.name} <${to.email}> </p>
+  ${body}
+  `;
+}
 export default validateEmail;

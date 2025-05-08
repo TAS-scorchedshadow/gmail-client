@@ -11,6 +11,7 @@ export default async function sendMessage(
   html?: string,
   cc?: string | string[],
   bcc?: string | string[],
+  inReplyTo?: string,
 ) {
   // console.log(to, subject, text, html, cc, bcc);
 
@@ -19,11 +20,10 @@ export default async function sendMessage(
     to: to,
     subject: subject,
     text: text,
+    inReplyTo: inReplyTo,
   });
 
-  console.log("there", to, subject);
   const message = await mail.compile().build();
-  console.log("Here");
 
   const base64EncodedEmail = Buffer.from(message)
     .toString("base64")

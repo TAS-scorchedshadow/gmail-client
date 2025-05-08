@@ -7,6 +7,7 @@ export type DBAddress = {
 
 export type DBMessage = {
   id: string;
+  emailRawId: string;
   s3Link: string;
   headers: { key: string; line: string }[];
   subject: string;
@@ -32,6 +33,7 @@ export const emailZodType = z.object({
   to: z.union([z.string().email(), z.array(z.string().email())]),
   cc: z.union([z.string().email(), z.array(z.string().email())]).optional(),
   bcc: z.union([z.string().email(), z.array(z.string().email())]).optional(),
+  inReplyTo: z.string().optional(),
   subject: z.string().min(1, "Subject cannot be empty"),
   text: z.string().optional(),
   html: z.string().optional(),
