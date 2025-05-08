@@ -39,9 +39,8 @@ import { SendModalContext } from "~/app/providers/SendContext";
 import { useFormContext } from "react-hook-form";
 import type { z } from "zod";
 import type { emailZodType } from "~/server/types";
-import { forwardedMessageHeader } from "~/app/utils/emailHelper";
+import { forwardedMessageHTML } from "~/app/utils/emailHelper";
 import { useSession } from "next-auth/react";
-import { use } from "react";
 
 export function MailDisplay() {
   const today = new Date();
@@ -55,11 +54,11 @@ export function MailDisplay() {
 
   async function handleForward() {
     const message = activeThread.messages[0];
-    setOpen(true);
-    if (!message) return;
-    // const res = await fetch(message!.s3Link).then((res) => res.text());
-    // console.log(res);
-    const forwardHeaders = forwardedMessageHeader(
+    if (!message) {
+      return;
+    }
+    const res = await fetch(message.s3Link).then((res) => res.text());
+    const forwardHeaders = forwardedMessageHTML(
       message.from[0]!,
       today,
       message.subject,
@@ -67,9 +66,11 @@ export function MailDisplay() {
         name: session?.user.name ?? "",
         email: session?.user.email ?? "",
       },
+      res,
     );
     setValue("subject", `Fwd: ${activeThread.messages[0]?.subject}`);
-    setValue("text", forwardHeaders + "\n\n" + message.text);
+    setValue("text", forwardHeaders);
+    setOpen(true);
   }
 
   const mail = activeThread;

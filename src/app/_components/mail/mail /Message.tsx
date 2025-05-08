@@ -2,7 +2,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Separator } from "~/components/ui/separator";
 import { format } from "date-fns/format";
 import elipseSubstring from "~/app/utils/substring";
-import { useEffect, useState } from "react";
 import DOMPurify from "dompurify";
 import type { DBMessage } from "~/server/types";
 import { unescape } from "lodash";

@@ -34,16 +34,11 @@ import type { Session } from "next-auth";
 import { Button } from "~/components/ui/button";
 import Link from "next/link";
 import MailSendDialog from "./dialog/MailDialog";
-import { Form, FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Tag } from "emblor";
 import type { z } from "zod";
 import { emailZodType } from "~/server/types";
-import { api } from "~/trpc/react";
-import {
-  SendModalContext,
-  SendModalProvider,
-} from "~/app/providers/SendContext";
+import { SendModalProvider } from "~/app/providers/SendContext";
 
 interface MailProps {
   mails: Mail[];

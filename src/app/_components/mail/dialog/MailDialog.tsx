@@ -9,14 +9,12 @@ import {
 } from "~/components/ui/dialog";
 import { type Tag, TagInput } from "emblor";
 import { useState } from "react";
-import { Textarea } from "~/components/ui/textarea";
 import validateEmail from "~/app/utils/emailHelper";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
-import { useForm, useFormContext } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import { type z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { emailZodType } from "~/server/types";
+import { type emailZodType } from "~/server/types";
 import {
   Form,
   FormControl,
@@ -28,6 +26,7 @@ import {
 import { SendIcon } from "lucide-react";
 import { useSafeContext } from "~/app/providers/useSafeContext";
 import { SendModalContext } from "~/app/providers/SendContext";
+import Tiptap from "../../TipTap";
 
 export default function MailSendDialog() {
   const { open, setOpen } = useSafeContext(SendModalContext);
@@ -109,10 +108,9 @@ export default function MailSendDialog() {
                 <FormItem className="flex flex-1 flex-col items-start">
                   <FormLabel className="text-left">Text</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Compose your email..."
-                      className="max-h-[40vh] flex-1 resize-none overflow-y-scroll"
-                      {...field}
+                    <Tiptap
+                      onChange={field.onChange}
+                      initialContent={field.value ?? ""}
                     />
                   </FormControl>
                   <FormMessage />

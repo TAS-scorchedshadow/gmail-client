@@ -23,4 +23,23 @@ export function forwardedMessageHeader(
   To: ${to.name} <${to.email}>`;
 }
 
+export function forwardedMessageHTML(
+  from: DBAddress,
+  date: Date,
+  subject: string,
+  to: DBAddress,
+  body: string,
+) {
+  console.log(body);
+  return `
+  <br>
+  <br>
+  <p>---------- Forwarded message ---------</p>
+  <p>From: ${from.name} <${from.email}> </p>
+  <p>Date: ${date.toUTCString()} </p>
+  <p>Subject: ${subject} </p>
+  <p>To: ${to.name} <${to.email}> </p>
+  ${body}
+  `;
+}
 export default validateEmail;

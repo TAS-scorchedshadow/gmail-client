@@ -22,6 +22,7 @@ export default async function sendMessage(
   // Base64url encode the email content
 
   console.log(emailContent);
+
   const encodedEmail = Buffer.from(emailContent).toString("base64");
   const res = await gmailClient.users.messages.send({
     userId: "me",
