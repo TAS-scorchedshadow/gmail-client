@@ -91,7 +91,33 @@ export function MailDisplay() {
       },
       res,
     );
-    setValue("to", `Re: ${activeThread.messages[0]?.from[0]?.email}`);
+    setValue("to", `${activeThread.messages[0]?.from[0]?.email}`);
+    setValue("subject", `Re: ${activeThread.messages[0]?.subject}`);
+    setValue("html", forwardHeaders);
+    setValue("inReplyTo", message.emailRawId);
+    setOpen(true);
+  }
+
+  async function handleReplyAll() {
+    const message = activeThread.messages[0];
+    if (!message) {
+      return;
+    }
+    const res = await fetch(message.s3Link).then((res) => res.text());
+    const forwardHeaders = replyMessageHTML(
+      message.from[0]!,
+      today,
+      message.subject,
+      {
+        name: session?.user.name ?? "",
+        email: session?.user.email ?? "",
+      },
+      res,
+    );
+    const sendTo = [...message.to, ...message.cc];
+    const to = sendTo.map((item) => item.email);
+
+    setValue("to", to);
     setValue("subject", `Re: ${activeThread.messages[0]?.subject}`);
     setValue("html", forwardHeaders);
     setValue("inReplyTo", message.emailRawId);
@@ -208,7 +234,12 @@ export function MailDisplay() {
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" disabled={!mail}>
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={!mail}
+                onClick={() => handleReplyAll()}
+              >
                 <ReplyAll className="h-4 w-4" />
                 <span className="sr-only">Reply all</span>
               </Button>

@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import { type Tag, TagInput } from "emblor";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import validateEmail from "~/app/utils/emailHelper";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
@@ -32,16 +32,28 @@ export default function MailSendDialog() {
   const { open, setOpen } = useSafeContext(SendModalContext);
   const form = useFormContext<z.infer<typeof emailZodType>>();
 
+  const to = form.getValues().to;
+
   const [tags, setTags] = useState<Tag[]>([]);
   const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    const _tags = Array.isArray(to) ? to : [to];
+    setTags(
+      _tags.map((tag, i) => {
+        return {
+          id: "" + i,
+          text: tag,
+        };
+      }),
+    );
+  }, [to]);
 
   const { setValue } = form;
   function onSubmit(data: z.infer<typeof emailZodType>) {
     console.log(data);
     emailMutation.mutate(data);
   }
-
-  console.log(form.getValues());
 
   const emailMutation = api.email.sendEmail.useMutation({
     onSuccess: () => {
@@ -120,7 +132,7 @@ export default function MailSendDialog() {
                   <FormControl>
                     <Tiptap
                       onHTMLChange={field.onChange}
-                      onTextChange={(x) => setValue("text", x)}
+                      onTextChange={(text) => setValue("text", text)}
                       initialContent={field.value ?? ""}
                     />
                   </FormControl>
