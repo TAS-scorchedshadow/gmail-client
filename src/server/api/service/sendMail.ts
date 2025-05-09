@@ -20,7 +20,7 @@ export default async function sendMessage(
     from: user.email && user.name ? `${user.name} <${user.email}>` : "",
     to: to,
     subject: subject,
-    text: "No text backup",
+    text: text,
     html: html,
     inReplyTo: inReplyTo,
   });
@@ -50,11 +50,3 @@ export default async function sendMessage(
 //    // Including it here is the standard way for the sending client to handle it.
 //    emailLines.splice(cc ? 3 : 2, 0, `Bcc: ${formatRecipients(bcc)}`); // Insert after Subject or Cc
 // }
-
-const formatRecipients = (recipients?: string | string[]) => {
-  if (!recipients) return "";
-  if (Array.isArray(recipients)) {
-    return recipients.join(", ");
-  }
-  return recipients;
-};

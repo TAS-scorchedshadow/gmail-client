@@ -119,7 +119,8 @@ export default function MailSendDialog() {
                   <FormLabel className="text-left">Text</FormLabel>
                   <FormControl>
                     <Tiptap
-                      onChange={field.onChange}
+                      onHTMLChange={field.onChange}
+                      onTextChange={(x) => setValue("text", x)}
                       initialContent={field.value ?? ""}
                     />
                   </FormControl>

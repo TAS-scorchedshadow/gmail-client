@@ -6,10 +6,12 @@ import StarterKit from "@tiptap/starter-kit";
 
 const Tiptap = ({
   initialContent,
-  onChange,
+  onHTMLChange,
+  onTextChange,
 }: {
   initialContent: string;
-  onChange: (content: string) => void;
+  onHTMLChange: (content: string) => void;
+  onTextChange: (content: string) => void;
 }) => {
   const editor = useEditor({
     extensions: [StarterKit, Blockquote],
@@ -21,8 +23,8 @@ const Tiptap = ({
     },
     content: initialContent,
     onUpdate: ({ editor }) => {
-      console.log(editor.getHTML());
-      onChange(editor.getHTML());
+      onHTMLChange(editor.getHTML());
+      onTextChange(editor.getText());
     },
   });
 
