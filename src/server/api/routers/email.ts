@@ -140,6 +140,10 @@ export const emailRouter = createTRPCRouter({
           },
         },
       },
+      orderBy: {
+        lastSynced: "desc",
+      },
+      take: 10,
     });
     // console.warn(
     //   "Found users",
@@ -167,6 +171,15 @@ export const emailRouter = createTRPCRouter({
         ctx.db,
         user.id,
       );
+
+      await ctx.db.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          lastSynced: new Date(),
+        },
+      });
       updated.push(user.email);
       // console.warn("Successfully awaited", user.email);
     }
@@ -175,6 +188,9 @@ export const emailRouter = createTRPCRouter({
 
   syncedHistoryAllUsers: publicProcedure.mutation(async ({ ctx }) => {
     const users = await ctx.db.user.findMany({
+      orderBy: {
+        lastSynced: "desc",
+      },
       include: {
         accounts: {
           where: {
@@ -182,6 +198,7 @@ export const emailRouter = createTRPCRouter({
           },
         },
       },
+      take: 10,
     });
     // console.warn(
     //   "Found users",
@@ -210,6 +227,14 @@ export const emailRouter = createTRPCRouter({
         ctx.db,
         user.id,
       );
+      await ctx.db.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          lastSynced: new Date(),
+        },
+      });
       updated.push(user.email);
       console.warn("Successfully awaited", user.email);
     }

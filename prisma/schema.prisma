@@ -90,6 +90,7 @@ model User {
     emailVerified DateTime?
     image         String?
 
+    lastSynced    DateTime @default(dbgenerated("NOW()"))
     lastHistoryId String?
     nextPageToken String? // Used for backfill
     isSynced      Boolean @default(false)
