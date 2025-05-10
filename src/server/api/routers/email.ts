@@ -19,6 +19,7 @@ function getGmailClient(access_token: string | null) {
     process.env.AUTH_GOOGLE_SECRET,
   );
   auth.setCredentials({ access_token: access_token });
+  google.options({ http2: true });
   return google.gmail({ version: "v1", auth });
 }
 
@@ -151,6 +152,7 @@ export const emailRouter = createTRPCRouter({
     // );
     const updated = [];
     for (const user of users) {
+      const start = Date.now();
       const googleAccount = user.accounts[0];
 
       if (!googleAccount) {
@@ -181,6 +183,8 @@ export const emailRouter = createTRPCRouter({
         },
       });
       updated.push(user.email);
+      const taken = Date.now() - start;
+      console.log("===================", taken / 1000, " seconds");
       // console.warn("Successfully awaited", user.email);
     }
     return updated;
