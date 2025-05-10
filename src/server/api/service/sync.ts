@@ -53,6 +53,13 @@ async function syncedHistory(
         });
       }
     });
+    const latestProcessed = res.data.history.reduce((prev, next) => {
+      if (!next.id) {
+        return prev;
+      }
+      return next.id > prev ? next.id : prev;
+    }, "0");
+
     await addMessages(db, gmail, userId, messagesToAdd);
     // await deleteMessages(db, messagesToRemove);
 
@@ -63,7 +70,7 @@ async function syncedHistory(
         id: userId,
       },
       data: {
-        lastHistoryId: res.data.historyId,
+        lastHistoryId: latestProcessed.toString(),
       },
     });
   } catch (err) {

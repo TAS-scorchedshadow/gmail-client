@@ -62,7 +62,7 @@ async function backFillUpdates(
     data: {
       nextPageToken: res.data.nextPageToken,
       isSynced:
-        res.data.nextPageToken !== undefined && res.data.nextPageToken !== null,
+        res.data.nextPageToken === undefined || res.data.nextPageToken === null,
     },
   });
   console.log("========old=======" + user.nextPageToken);
