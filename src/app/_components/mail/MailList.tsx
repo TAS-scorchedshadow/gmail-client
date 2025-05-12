@@ -79,12 +79,12 @@ export function MailList({ search }: { search: string }) {
   }
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="mx-3 flex flex-1 flex-col">
       <div
         ref={parentRef}
         onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}
         style={{
-          height: `${height - 150}px`,
+          height: `${height - 140}px`,
           width: `100%`,
           overflow: "auto",
         }}
