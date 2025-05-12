@@ -7,7 +7,6 @@ import {
   ArchiveX,
   File,
   Inbox,
-  LogOutIcon,
   MessagesSquare,
   Search,
   Send,
@@ -28,20 +27,18 @@ import { MailDisplay } from "./MailDisplay";
 import { MailList } from "./MailList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Input } from "~/components/ui/input";
-import type { Mail } from "./data";
 import { ThreadProvider } from "../../providers/ThreadContext";
 import type { Session } from "next-auth";
-import { Button } from "~/components/ui/button";
-import Link from "next/link";
 import MailSendDialog from "./dialog/MailDialog";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
 import { emailZodType } from "~/server/types";
 import { SendModalProvider } from "~/app/providers/SendContext";
+import SyncBtn from "./SyncBtn";
+import { AccountSwitcher } from "./AccountSwitcher";
 
 interface MailProps {
-  mails: Mail[];
   user: Session["user"];
   defaultLayout: number[] | undefined;
   defaultCollapsed?: boolean;
@@ -49,10 +46,9 @@ interface MailProps {
 }
 
 export function Mail({
-  defaultLayout = [20, 32, 48],
-  defaultCollapsed = false,
+  defaultLayout = [5, 32, 48],
+  defaultCollapsed = true,
   navCollapsedSize,
-  user,
 }: MailProps) {
   const form = useForm<z.infer<typeof emailZodType>>({
     resolver: zodResolver(emailZodType),
@@ -108,27 +104,35 @@ export function Mail({
               >
                 <div
                   className={cn(
-                    "flex h-[52px] items-center justify-between text-xs",
+                    "flex h-[52px] items-center justify-center text-xs",
                     isCollapsed ? "h-[52px]" : "px-2",
                   )}
                 >
-                  {user.email}
+                  {/* {user.email}
                   <Link href={"/api/auth/signout"} className="cursor-pointer">
                     <Button className="cursor-pointer">
                       <p>Sign Out</p>
                       <LogOutIcon />
                     </Button>
-                  </Link>
-                  {/* <AccountSwitcher isCollapsed={isCollapsed} accounts={accounts} /> */}
+                  </Link> */}
+                  <AccountSwitcher isCollapsed={isCollapsed} />
                 </div>
                 <Separator />
                 <div
                   className={cn(
-                    "flex h-[52px] items-center justify-between text-xs",
+                    "flex h-[52px] items-center justify-center text-xs",
                     isCollapsed ? "h-[52px]" : "px-2",
                   )}
                 >
-                  <MailSendDialog />
+                  <MailSendDialog isCollapsed={isCollapsed} />
+                </div>
+                <div
+                  className={cn(
+                    "flex h-[52px] items-center justify-center text-xs",
+                    isCollapsed ? "h-[52px]" : "px-2",
+                  )}
+                >
+                  <SyncBtn isCollapsed={isCollapsed} />
                 </div>
                 <Nav
                   isCollapsed={isCollapsed}

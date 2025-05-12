@@ -23,12 +23,16 @@ import {
   FormLabel,
   FormMessage,
 } from "~/components/ui/form";
-import { SendIcon } from "lucide-react";
+import { Plus, SendIcon } from "lucide-react";
 import { useSafeContext } from "~/app/providers/useSafeContext";
 import { SendModalContext } from "~/app/providers/SendContext";
 import Tiptap from "../../TipTap";
 
-export default function MailSendDialog() {
+export default function MailSendDialog({
+  isCollapsed,
+}: {
+  isCollapsed: boolean;
+}) {
   const { open, setOpen } = useSafeContext(SendModalContext);
   const form = useFormContext<z.infer<typeof emailZodType>>();
 
@@ -63,8 +67,10 @@ export default function MailSendDialog() {
   const { isPending } = emailMutation;
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger className="w-full cursor-pointer rounded-md bg-amber-100 p-2">
-        Compose
+      <DialogTrigger asChild>
+        <Button className={isCollapsed ? "flex h-9 w-9" : `w-full`}>
+          {isCollapsed ? "" : "New Email"} <Plus />
+        </Button>
       </DialogTrigger>
       <DialogContent
         className="flex h-[75vh] min-w-[50vw] flex-col"

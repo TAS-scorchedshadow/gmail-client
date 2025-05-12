@@ -1,62 +1,62 @@
 "use client";
 
+import { LogOutIcon } from "lucide-react";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
 import * as React from "react";
+import { Button } from "~/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import { Separator } from "~/components/ui/separator";
 import { cn } from "~/lib/utils";
 
 interface AccountSwitcherProps {
   isCollapsed: boolean;
-  accounts: {
-    label: string;
-    email: string;
-    icon: React.ReactNode;
-  }[];
 }
 
-export function AccountSwitcher({
-  isCollapsed,
-  accounts,
-}: AccountSwitcherProps) {
-  const [selectedAccount, setSelectedAccount] = React.useState<string>(
-    accounts[0]!.email,
-  );
+export function AccountSwitcher({ isCollapsed }: AccountSwitcherProps) {
+  const user = useSession().data?.user;
 
-  return (
-    <Select defaultValue={selectedAccount} onValueChange={setSelectedAccount}>
-      <SelectTrigger
+  return isCollapsed ? (
+    <Popover>
+      <PopoverTrigger
         className={cn(
-          "flex items-center gap-2 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0 [&>span]:line-clamp-1 [&>span]:flex [&>span]:w-full [&>span]:items-center [&>span]:gap-1 [&>span]:truncate",
+          "bg-secondary flex cursor-pointer items-center gap-2 rounded-md [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0 [&>span]:line-clamp-1 [&>span]:flex [&>span]:w-full [&>span]:items-center [&>span]:gap-1 [&>span]:truncate",
           isCollapsed &&
             "flex h-9 w-9 shrink-0 items-center justify-center p-0 [&>span]:w-auto [&>svg]:hidden",
         )}
         aria-label="Select account"
       >
-        <SelectValue placeholder="Select an account">
-          {accounts.find((account) => account.email === selectedAccount)?.icon}
-          <span className={cn("ml-2", isCollapsed && "hidden")}>
-            {
-              accounts.find((account) => account.email === selectedAccount)
-                ?.label
-            }
-          </span>
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {accounts.map((account, i) => (
-          <SelectItem key={account.email + i} value={account.email}>
-            <div className="[&_svg]:text-foreground flex items-center gap-3 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0">
-              {account.icon}
-              {account.email}
-            </div>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+        {user?.name
+          ? user?.name
+              .split(" ")
+              .map((chunk) => chunk[0])
+              .join("")
+          : "AC"}
+      </PopoverTrigger>
+      <PopoverContent className="flex flex-col gap-2 text-sm">
+        <p className="mb-2">{user?.email}</p>
+        <Separator />
+        <p>Dylan Huynh</p>
+        <Link href={"/api/auth/signout"} className="cursor-pointer">
+          <Button size={"sm"} className="w-full">
+            Sign out <LogOutIcon />
+          </Button>
+        </Link>
+      </PopoverContent>
+    </Popover>
+  ) : (
+    <div className="flex w-full items-center justify-between">
+      <p className="pl-1">{user?.email}</p>
+      <Link href={"/api/auth/signout"} className="cursor-pointer">
+        <Button className="cursor-pointer text-xs">
+          <p>Sign Out</p>
+          <LogOutIcon />
+        </Button>
+      </Link>
+    </div>
   );
 }

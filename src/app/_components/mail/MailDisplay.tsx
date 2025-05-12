@@ -1,18 +1,4 @@
-import { addDays } from "date-fns/addDays";
-import { addHours } from "date-fns/addHours";
-import { format } from "date-fns/format";
-import { nextSaturday } from "date-fns/nextSaturday";
-import {
-  Archive,
-  ArchiveX,
-  Calendar,
-  Clock,
-  Forward,
-  MoreVertical,
-  Reply,
-  ReplyAll,
-  Trash2,
-} from "lucide-react";
+import { Forward, MoreVertical, Reply, ReplyAll } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -27,11 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Separator } from "~/components/ui/separator";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
 import Thread from "./mail /Thread";
 import { useSafeContext } from "../../providers/useSafeContext";
 import { ThreadContext } from "../../providers/ThreadContext";
@@ -128,7 +109,8 @@ export function MailDisplay() {
   return (
     <div className="h-max-screen flex h-full flex-col">
       <div className="flex items-center p-2">
-        <div className="flex items-center gap-2">
+        {/* Unimplmented features
+         <div className="flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" disabled={!mail}>
@@ -216,7 +198,7 @@ export function MailDisplay() {
             </Popover>
             <TooltipContent>Snooze</TooltipContent>
           </Tooltip>
-        </div>
+        </div> */}
         <div className="ml-auto flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
