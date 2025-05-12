@@ -13,21 +13,6 @@ export default function Message({
   // Currently coerces to link into of s3link ????????
   message: DBMessage;
 }) {
-  // const { data } = api.email.getS3Bucket.useQuery({
-  //   key: `message-${message.id}`,
-  // });
-
-  // const [html, setHtml] = useState<string>("");
-  // useEffect(() => {
-  //   console.log(message);
-  //   fetch(message.s3Link)
-  //     .then((res) => {
-  //       return res.text();
-  //     })
-  //     .then((resp) => setHtml(resp))
-  //     .catch((err) => "Error" + console.log(err));
-  // }, [message]);
-
   const query = useQuery({
     queryKey: ["message", message.id],
     queryFn: () => fetch(message.s3Link).then((res) => res.text()),
@@ -45,7 +30,7 @@ export default function Message({
   const date = message.date;
 
   return (
-    <div className="mb-10 flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col">
       <div className="flex items-start p-4">
         <div className="flex items-start gap-4 text-sm">
           <Avatar>
@@ -71,8 +56,8 @@ export default function Message({
         )}
       </div>
       <Separator />
-      <div className="flex-1 p-4 text-sm whitespace-pre-wrap">
-        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }} />
+      <div className="flex-1 overflow-hidden p-4 text-sm whitespace-pre-wrap">
+        <iframe className="h-screen w-full" srcDoc={DOMPurify.sanitize(html)} />
       </div>
     </div>
   );
