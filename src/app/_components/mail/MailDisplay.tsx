@@ -25,10 +25,9 @@ import {
   replyMessageHTML,
 } from "~/app/utils/emailHelper";
 import { useSession } from "next-auth/react";
+import { useCallback } from "react";
 
 export function MailDisplay() {
-  const today = new Date();
-
   const { activeThread } = useSafeContext(ThreadContext);
   const { setOpen } = useSafeContext(SendModalContext);
 
@@ -36,7 +35,7 @@ export function MailDisplay() {
   const { setValue } = form;
   const { data: session } = useSession();
 
-  async function handleForward() {
+  const handleForward = useCallback(async () => {
     const message = activeThread.messages[0];
     if (!message) {
       return;
@@ -44,7 +43,7 @@ export function MailDisplay() {
     const res = await fetch(message.s3Link).then((res) => res.text());
     const forwardHeaders = forwardedMessageHTML(
       message.from[0]!,
-      today,
+      new Date(),
       message.subject,
       {
         name: session?.user.name ?? "",
@@ -55,8 +54,9 @@ export function MailDisplay() {
     setValue("subject", `Fwd: ${activeThread.messages[0]?.subject}`);
     setValue("html", forwardHeaders);
     setOpen(true);
-  }
-  async function handleReply() {
+  }, [activeThread, setValue, setOpen, session]);
+
+  const handleReply = useCallback(async () => {
     const message = activeThread.messages[0];
     if (!message) {
       return;
@@ -64,7 +64,7 @@ export function MailDisplay() {
     const res = await fetch(message.s3Link).then((res) => res.text());
     const forwardHeaders = replyMessageHTML(
       message.from[0]!,
-      today,
+      new Date(),
       message.subject,
       {
         name: session?.user.name ?? "",
@@ -77,9 +77,10 @@ export function MailDisplay() {
     setValue("html", forwardHeaders);
     setValue("inReplyTo", message.emailRawId);
     setOpen(true);
-  }
+    console.log(message);
+  }, [activeThread, setValue, setOpen, session]);
 
-  async function handleReplyAll() {
+  const handleReplyAll = useCallback(async () => {
     const message = activeThread.messages[0];
     if (!message) {
       return;
@@ -87,7 +88,7 @@ export function MailDisplay() {
     const res = await fetch(message.s3Link).then((res) => res.text());
     const forwardHeaders = replyMessageHTML(
       message.from[0]!,
-      today,
+      new Date(),
       message.subject,
       {
         name: session?.user.name ?? "",
@@ -103,7 +104,7 @@ export function MailDisplay() {
     setValue("html", forwardHeaders);
     setValue("inReplyTo", message.emailRawId);
     setOpen(true);
-  }
+  }, [activeThread, setValue, setOpen, session]);
 
   const mail = activeThread;
   return (

@@ -30,7 +30,6 @@ export function forwardedMessageHTML(
   to: DBAddress,
   body: string,
 ) {
-  console.log(body);
   return `
   <br>
   <br>
