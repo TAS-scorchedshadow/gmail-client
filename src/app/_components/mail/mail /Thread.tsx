@@ -8,9 +8,9 @@ export default function Thread({ thread }: { thread: DBThread }) {
   return (
     <div className="flex flex-1 flex-col">
       <ScrollArea className="h-full max-h-[95vh]">
-        {messages?.map((message) => (
-          <Message key={message.id} message={message} />
-        ))}
+        {messages
+          ?.map((message) => <Message key={message.id} message={message} />)
+          .reverse()}
       </ScrollArea>
     </div>
   );
