@@ -5,7 +5,7 @@ import elipseSubstring from "~/app/utils/substring";
 import DOMPurify from "dompurify";
 import type { DBAddress, DBMessage } from "~/server/types";
 import { unescape } from "lodash";
-import { useQuery } from "@tanstack/react-query";
+import { api } from "~/trpc/react";
 
 export default function Message({
   message,
@@ -13,11 +13,9 @@ export default function Message({
   // Currently coerces to link into of s3link ????????
   message: DBMessage;
 }) {
-  const query = useQuery({
-    queryKey: ["message", message.id],
-    queryFn: () => fetch(message.s3Link).then((res) => res.text()),
+  const query = api.email.getMessageHTML.useQuery({
+    messageId: message.id,
   });
-
   const html = query.data ?? "";
 
   const from: DBAddress = message.from[0] ?? { email: "Unknown", name: "" };

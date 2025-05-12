@@ -261,4 +261,28 @@ export const emailRouter = createTRPCRouter({
       );
       return res;
     }),
+
+  getMessageHTML: protectedProcedure
+    .input(
+      z.object({
+        messageId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const hasMessage = await ctx.db.message.findFirst({
+        where: {
+          thread: {
+            userId: ctx.session.user.id,
+          },
+        },
+      });
+      if (!hasMessage) {
+        throw new TRPCError({ code: "CONFLICT" });
+      }
+      const res = await getFromS3Bucket(`message-${input.messageId}`);
+      if (!res.Body) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      return res.Body.transformToString();
+    }),
 });
